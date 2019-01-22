@@ -1,11 +1,8 @@
-std::vector<Leg> leg_info = {Phy1,Phy2,Phy3,Phy4};// default is hamiltonian's leg since it is usually const
+Eigen::array<Leg, DerivedTraits::NumDimensions> leg_info;// = {Phy1,Phy2,Phy3,Phy4};// default is hamiltonian's leg since it is usually const
 
-EIGEN_STRONG_INLINE void set_leg(const std::vector<Leg>& new_leg){
-    leg_info = new_leg;
-}
-
-EIGEN_STRONG_INLINE void unsafe_set_leg(std::vector<Leg>& new_leg){
-    leg_info.swap(new_leg);
+EIGEN_STRONG_INLINE void set_leg(const Eigen::array<Leg, DerivedTraits::NumDimensions>& new_leg){
+    //std::copy(new_leg.data(), new_leg.data()+DerivedTraits::NumDimensions, this->leg_info.data());
+    this->leg_info = new_leg;
 }
 
 //Eigen::array<Eigen::IndexPair<int>, 1> dims = { Eigen::IndexPair<int>(3, 2) };
@@ -21,7 +18,21 @@ node_contract(const OtherDerived& other, const Eigen::array<Leg, ContractNum>& l
         dims[i].first = index1[i];
         dims[i].second = index2[i];
     }
-    return this->contract(other, dims);
+    auto res = this->contract(other, dims);
+    auto i=0;
+    for(auto j=0;j<this->leg_info.size();j++){
+        auto index = std::find(leg1.begin(), leg1.end(), this->leg_info[j]);
+        if(index==leg1.end()){
+            res.leg_info[i++] = this->leg_info[j];
+        }
+    }
+    for(auto j=0;j<other.leg_info.size();j++){
+        auto index = std::find(leg2.begin(), leg2.end(), other.leg_info[j]);
+        if(index==leg2.end()){
+            res.leg_info[i++] = other.leg_info[j];
+        }
+    }
+    return res;
 }
 
 template<unsigned long ContractNum>// 迷，不用unsigned long int 的话template不能匹配
@@ -29,7 +40,7 @@ Eigen::array<Index, ContractNum> get_index_from_leg(const Eigen::array<Leg, Cont
     /* 输入一个leg array, 返回一个对应的index array， 不存在的leg对应-1(!!!) */
     Eigen::array<Index, ContractNum> res;
     for(int i=0;i<ContractNum;i++){
-        std::vector<Leg>::const_iterator index = std::find(this->leg_info.begin(), this->leg_info.end(), legs[i]);
+        auto index = std::find(this->leg_info.begin(), this->leg_info.end(), legs[i]);
         if(index==this->leg_info.end()){
             res[i] = -1;
         }else{
