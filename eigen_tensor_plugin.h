@@ -1,13 +1,11 @@
 Eigen::array<Leg, DerivedTraits::NumDimensions> leg_info;// = {Phy1,Phy2,Phy3,Phy4};// default is hamiltonian's leg since it is usually const
 
 EIGEN_STRONG_INLINE void set_leg(const Eigen::array<Leg, DerivedTraits::NumDimensions>& new_leg){
-    //std::copy(new_leg.data(), new_leg.data()+DerivedTraits::NumDimensions, this->leg_info.data());
+
     this->leg_info = new_leg;
 }
 
-//Eigen::array<Eigen::IndexPair<int>, 1> dims = { Eigen::IndexPair<int>(3, 2) };
-
-template<typename OtherDerived, unsigned long ContractNum> EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE
+template<typename OtherDerived, std::size_t ContractNum> EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE
 const TensorContractionOp<const Eigen::array<Eigen::IndexPair<Index>, ContractNum>, const Derived, const OtherDerived, const NoOpOutputKernel>
 node_contract(const OtherDerived& other, const Eigen::array<Leg, ContractNum>& leg1, const Eigen::array<Leg, ContractNum>& leg2) const {
     Eigen::array<Index, ContractNum> index1 = this->get_index_from_leg(leg1);
@@ -35,7 +33,7 @@ node_contract(const OtherDerived& other, const Eigen::array<Leg, ContractNum>& l
     return res;
 }
 
-template<unsigned long ContractNum>// 迷，不用unsigned long int 的话template不能匹配
+template<std::size_t ContractNum>// 迷，不用unsigned long int 的话template不能匹配
 Eigen::array<Index, ContractNum> get_index_from_leg(const Eigen::array<Leg, ContractNum>& legs) const {
     /* 输入一个leg array, 返回一个对应的index array， 不存在的leg对应-1(!!!) */
     Eigen::array<Index, ContractNum> res;
@@ -49,6 +47,3 @@ Eigen::array<Index, ContractNum> get_index_from_leg(const Eigen::array<Leg, Cont
     }
     return res;
 }
-
-// 问题1：是不是需要吧int改成其他更好的类型？
-// 问题2：leg_info的定长
