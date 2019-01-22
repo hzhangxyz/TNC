@@ -14,20 +14,28 @@ const double delta_t = 0.1;
 const int step = 100;
 
 int main(){
-  Eigen::Tensor<double, 3> lattice[L];
-  lattice[0] = Eigen::Tensor<double, 3>(phy_D,1,D);
-  lattice[0].setRandom();
-  for(int i=1;i<L-1;i++){
-    lattice[i] = Eigen::Tensor<double, 3>(phy_D,D,D);
-    lattice[i].setRandom();
-  }
-  lattice[L-1] = Eigen::Tensor<double, 3>(phy_D,D,1);
-  lattice[L-1].setRandom();
+  Eigen::Tensor<double, 3> A,B;
+  std::cout << "size=" << A.size() << ", rank=" <<  A.NumDimensions << std::endl;
+  A = Eigen::Tensor<double, 3>(phy_D,D,D*2);\
+  A.set_leg({Phy1,Left,Right});
+  A.setRandom();
+  B = Eigen::Tensor<double, 3>(phy_D,D*2,D);
+  B.set_leg({Phy2,Left,Right});
+  B.setRandom();
   
-  std::cout << lattice[L-1] << std::endl;
-  lattice[L-1].set_leg({Left,Up,Right});
-  std::cout << lattice[L-1].leg_info[1] << std::endl;
+  std::cout << A << std::endl;
+  std::cout << A.leg_info[2] << std::endl;
   std::cout << Hamiltonian.leg_info[1] << std::endl;
-  Eigen::Tensor<double, 3> tt = lattice[L-1];
-  std::cout << tt.leg_info[1] << std::endl;//!!!!!
+  Eigen::Tensor<double, 3> tt = A;
+  std::cout << tt.leg_info[1] << std::endl;//!!!!! when copy, leg info lost
+  Eigen::IndexPair<int> pair {2, 1};
+  std::array<Eigen::IndexPair<int>, 1> pairs {pair};
+  Eigen::Tensor<double, 4> AXB = A.contract(B,pairs);
+  std::cout << AXB.size() << std::endl;
+  Eigen::Tensor<double, 4> AB = A.node_contract(B,Eigen::array<Leg, 1>{Right},Eigen::array<Leg, 1>{Left});
+  Eigen::Tensor<double, 4> BA = A.node_contract(B,Eigen::array<Leg, 1>{Left},{Right});
+  std::cout << AB.size() << " " << BA.size() << "\n";
+  Eigen::array<Leg,3> lleg {Phy,Right,Phy1};
+  auto ii = A.get_index_from_leg(lleg);
+  std::cout << ii[0] << " " << ii[1] << " " << ii[2] << "\n";
 }
