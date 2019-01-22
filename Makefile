@@ -1,3 +1,3 @@
 test:
-	g++ main.cpp -I./eigen3/unsupported -I. -g
+	g++ main.cpp -I./eigen-git-mirror/unsupported -I. -g
 	./a.out

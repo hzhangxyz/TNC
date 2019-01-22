@@ -17,12 +17,12 @@ int main(){
   Eigen::Tensor<double, 3> A,B;
   std::cout << "size=" << A.size() << ", rank=" <<  A.NumDimensions << std::endl;
   A = Eigen::Tensor<double, 3>(phy_D,D,D*2);\
-  A.set_leg({Phy1,Left,Right});
   A.setRandom();
+  A.set_leg({Phy1,Left,Right});
   B = Eigen::Tensor<double, 3>(phy_D,D*2,D);
-  B.set_leg({Phy2,Left,Right});
   B.setRandom();
-  
+  B.set_leg({Phy2,Left,Right});// 顺序不能换 random 和set leg
+
   std::cout << A << std::endl;
   std::cout << A.leg_info[0] << std::endl;
   //std::cout << Hamiltonian.leg_info[0] << std::endl;

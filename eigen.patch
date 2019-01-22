@@ -1,0 +1,73 @@
+diff --git a/unsupported/Eigen/CXX11/src/Tensor/Tensor.h b/unsupported/Eigen/CXX11/src/Tensor/Tensor.h
+index 17cee495f..d858e3287 100644
+--- a/unsupported/Eigen/CXX11/src/Tensor/Tensor.h
++++ b/unsupported/Eigen/CXX11/src/Tensor/Tensor.h
+@@ -334,6 +334,7 @@ class Tensor : public TensorBase<Tensor<Scalar_, NumIndices_, Options_, IndexTyp
+     EIGEN_STRONG_INLINE Tensor(const Self& other)
+       : m_storage(other.m_storage)
+     {
++       this->leg_info = other.leg_info;
+     }
+ 
+ #if EIGEN_HAS_VARIADIC_TEMPLATES
+@@ -387,6 +388,7 @@ class Tensor : public TensorBase<Tensor<Scalar_, NumIndices_, Options_, IndexTyp
+       Assign assign(*this, other.derived());
+       resize(TensorEvaluator<const Assign, DefaultDevice>(assign, DefaultDevice()).dimensions());
+       internal::TensorExecutor<const Assign, DefaultDevice>::run(assign, DefaultDevice());
++      this->leg_info = other.leg_info;//?
+     }
+     template<typename OtherDerived>
+     EIGEN_DEVICE_FUNC
+@@ -396,6 +398,7 @@ class Tensor : public TensorBase<Tensor<Scalar_, NumIndices_, Options_, IndexTyp
+       Assign assign(*this, other.derived());
+       resize(TensorEvaluator<const Assign, DefaultDevice>(assign, DefaultDevice()).dimensions());
+       internal::TensorExecutor<const Assign, DefaultDevice>::run(assign, DefaultDevice());
++      this->leg_info = other.leg_info;//?
+     }
+ 
+     #if EIGEN_HAS_RVALUE_REFERENCES
+@@ -404,11 +407,13 @@ class Tensor : public TensorBase<Tensor<Scalar_, NumIndices_, Options_, IndexTyp
+       : Tensor()
+     {
+       m_storage.swap(other.m_storage);
++      this->leg_info = other.leg_info;
+     }
+     EIGEN_DEVICE_FUNC
+     EIGEN_STRONG_INLINE Tensor& operator=(Self&& other)
+     {
+       m_storage.swap(other.m_storage);
++      this->leg_info = other.leg_info;
+       return *this;
+     }
+     #endif
+@@ -420,6 +425,7 @@ class Tensor : public TensorBase<Tensor<Scalar_, NumIndices_, Options_, IndexTyp
+       Assign assign(*this, other);
+       resize(TensorEvaluator<const Assign, DefaultDevice>(assign, DefaultDevice()).dimensions());
+       internal::TensorExecutor<const Assign, DefaultDevice>::run(assign, DefaultDevice());
++      this->leg_info = other.leg_info;//?
+       return *this;
+     }
+     template<typename OtherDerived>
+@@ -430,6 +436,7 @@ class Tensor : public TensorBase<Tensor<Scalar_, NumIndices_, Options_, IndexTyp
+       Assign assign(*this, other);
+       resize(TensorEvaluator<const Assign, DefaultDevice>(assign, DefaultDevice()).dimensions());
+       internal::TensorExecutor<const Assign, DefaultDevice>::run(assign, DefaultDevice());
++      this->leg_info = other.leg_info;//?
+       return *this;
+     }
+ 
+diff --git a/unsupported/Eigen/CXX11/src/Tensor/TensorBase.h b/unsupported/Eigen/CXX11/src/Tensor/TensorBase.h
+index 7d9afa685..12b209bbb 100644
+--- a/unsupported/Eigen/CXX11/src/Tensor/TensorBase.h
++++ b/unsupported/Eigen/CXX11/src/Tensor/TensorBase.h
+@@ -873,6 +873,10 @@ class TensorBase<Derived, ReadOnlyAccessors>
+       return TensorForcedEvalOp<const Derived>(derived());
+     }
+ 
++    #ifdef EIGEN_TENSOR_PLUGIN
++    #include EIGEN_TENSOR_PLUGIN
++    #endif
++
+   protected:
+     template <typename Scalar, int NumIndices, int Options, typename IndexType> friend class Tensor;
+     template <typename Scalar, typename Dimensions, int Option, typename IndexTypes> friend class TensorFixedSize;
