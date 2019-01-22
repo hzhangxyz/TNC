@@ -21,11 +21,10 @@ int main(){
   B.setRandom();
   B.set_leg({Phy2,Left,Right});// 顺序不能换 random 和set leg
 
-  std::cout << A << std::endl;
-  std::cout << A.leg_info[0] << std::endl;
+  debug_tensor(A);
   //std::cout << Hamiltonian.leg_info[0] << std::endl;
   Eigen::Tensor<double, 3> tt = A;
-  std::cout << tt.leg_info[0] << std::endl;//!!!!! when copy, leg info lost
+  debug_tensor(tt);
   Eigen::IndexPair<int> pair {2, 1};
   std::array<Eigen::IndexPair<int>, 1> pairs {pair};
   Eigen::Tensor<double, 4> AXB = A.contract(B,pairs);
@@ -33,4 +32,6 @@ int main(){
   Eigen::Tensor<double, 4> AB = A.node_contract(B,Eigen::array<Leg, 1>{Right},{Left},{{Phy1,Phy3}});
   debug_tensor(AB);
   //debug_tensor(BA);
+  Eigen::Tensor<double, 3> C = Eigen::Tensor<double, 3>(phy_D,D,D*2);\
+  debug_tensor(C);
 }
