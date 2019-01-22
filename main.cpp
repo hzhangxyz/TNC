@@ -1,4 +1,4 @@
-#include "config.h"
+#include "include.h"
 
 const int L=10;
 const int D=4;

@@ -1,5 +1,5 @@
-#ifndef CONFIG_H
-#define CONFIG_H
+#ifndef INCLUDE_H
+#define INCLUDE_H
 #include <iostream>
 #include <vector>
 #include <map>
@@ -28,6 +28,7 @@ std::array<Leg, n>default_leg_info(){
 }*/
 // cpp的类型推演不够强的问题？
 #define EIGEN_TENSOR_PLUGIN "eigen_tensor_plugin.h"
+#define EIGEN_USE_MKL_ALL
 #include <Eigen/CXX11/Tensor>
 
 /*template<typename Der, typename Acc>
@@ -40,8 +41,8 @@ void __debug_tensor(Eigen::Tensor<S, N, O, I>& t, const char* s) {
     for(auto i=0;i<t.NumDimensions;i++){
         std::clog << "(" << t.dimension(i) << "|" << t.leg_info[i] << "), ";
     }
-    std::clog << "]";
-    if(t.size()<500){std::clog << "\n" << t << " }\n";}
+    std::clog << "], size=" << t.size();
+    if(t.size()<500){std::clog << ", data=\n" << t << " }\n";}
     else{std::clog << "}";}
 }
 #define debug_tensor(x) __debug_tensor(x, #x)
