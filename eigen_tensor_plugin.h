@@ -1,9 +1,11 @@
-Eigen::array<Leg, DerivedTraits::NumDimensions> leg_info;// = default_leg_info();
+Eigen::array<Leg, DerivedTraits::NumDimensions> leg_info = DefaultLeg<DerivedTraits::NumDimensions>::value;
 
 EIGEN_DEVICE_FUNC
 EIGEN_STRONG_INLINE void set_leg(const Eigen::array<Leg, DerivedTraits::NumDimensions>& new_leg){
     this->leg_info = new_leg;
 }
+
+#define find_in(it, pool) std::find((pool).begin(), (pool).end(), it)
 
 template<typename OtherDerived, std::size_t ContractNum> EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE
 EIGEN_DEVICE_FUNC const TensorContractionOp<const Eigen::array<Eigen::IndexPair<Index>, ContractNum>, const Derived, const OtherDerived, const NoOpOutputKernel>
@@ -21,37 +23,34 @@ node_contract(const OtherDerived& other,
     }
     auto res = this->contract(other, dims);
     auto i=0;
+    #define check_in_and_map(it, legs, map) {\
+        auto index = find_in(it, legs);\
+        if(index==legs.end()){\
+            auto leg = map.find(it);\
+            if(leg==map.end()){\
+                res.leg_info[i++] = legs[j];\
+            }else{\
+                res.leg_info[i++] = leg->second;\
+            }\
+        }\
+    }
     for(auto j=0;j<this->leg_info.size();j++){
-        auto index = std::find(leg1.begin(), leg1.end(), this->leg_info[j]);
-        if(index==leg1.end()){
-            auto leg = map1.find(this->leg_info[j]);
-            if(leg==map1.end()){
-                res.leg_info[i++] = this->leg_info[j];
-            }else{
-                res.leg_info[i++] = leg->second;
-            }
-        }
+        check_in_and_map(this->leg_info[j], leg1, map1);
     }
     for(auto j=0;j<other.leg_info.size();j++){
-        auto index = std::find(leg2.begin(), leg2.end(), other.leg_info[j]);
-        if(index==leg2.end()){
-            auto leg = map2.find(other.leg_info[j]);
-            if(leg==map2.end()){
-                res.leg_info[i++] = other.leg_info[j];
-            }else{
-                res.leg_info[i++] = leg->second;
-            }
-        }
+        check_in_and_map(other.leg_info[j], leg2, map2);
     }
+    #undef check_in_and_map
     return res;
 }
 
-template<std::size_t ContractNum>// 迷，不用unsigned long int 的话template不能匹配
+
+template<std::size_t ContractNum>
 EIGEN_DEVICE_FUNC Eigen::array<Index, ContractNum> get_index_from_leg(const Eigen::array<Leg, ContractNum>& legs) const {
     /* 输入一个leg array, 返回一个对应的index array， 不存在的leg对应-1(!!!) */
     Eigen::array<Index, ContractNum> res;
     for(auto i=0;i<ContractNum;i++){
-        auto index = std::find(this->leg_info.begin(), this->leg_info.end(), legs[i]);
+        auto index = find_in(legs[i], this->leg_info);
         if(index==this->leg_info.end()){
             res[i] = -1;
         }else{
@@ -60,3 +59,5 @@ EIGEN_DEVICE_FUNC Eigen::array<Index, ContractNum> get_index_from_leg(const Eige
     }
     return res;
 }
+
+#undef find_in

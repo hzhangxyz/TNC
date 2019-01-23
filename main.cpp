@@ -4,13 +4,13 @@ const int L=10;
 const int D=4;
 const int phy_D = 2;
 const double Hamiltonian_data[] = {1,0,0,0,0,-1,2,0,0,2,-1,0,0,0,0,1};
-
+const Eigen::TensorMap<Eigen::Tensor<double, 4>> Hamiltonian = {(double *)Hamiltonian_data, {2,2,2,2}};
 const double delta_t = 0.1;
 const int step = 100;
+const Eigen::TensorFixedSize<double,Eigen::Sizes<2,2,2,2>> another;// = {1,0,0,0,0,-1,2,0,0,2,-1,0,0,0,0,1};
 
 int main(){
-  Eigen::TensorMap<Eigen::Tensor<double, 4>> Hamiltonian = {(double *)Hamiltonian_data, {2,2,2,2}};
-  Hamiltonian.leg_info = {Left,Left,Left,Left};
+
 
   Eigen::Tensor<double, 3> A,B;
   std::cout << "size=" << A.size() << ", rank=" <<  A.NumDimensions << std::endl;
@@ -34,4 +34,8 @@ int main(){
   //debug_tensor(BA);
   Eigen::Tensor<double, 3> C = Eigen::Tensor<double, 3>(phy_D,D,D*2);\
   debug_tensor(C);
+  //auto hl = AB.__get_default_leg_info();
+  //std::cout << hl[0] << hl[1] << hl[2] << hl[3] << std::endl;
+  debug_tensor(Hamiltonian);
+  debug_tensor(another);
 }
