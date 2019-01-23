@@ -23,7 +23,7 @@ IncGroup() IncGroup(1) IncGroup(2) IncGroup(3) IncGroup(4)
 // 设置默认Leg
 template<std::size_t rank>
 struct DefaultLeg{
-    static const std::array<Leg, rank> value;
+  static const std::array<Leg, rank> value;
 };
 template <>
 const std::array<Leg, 4> DefaultLeg<4>::value = {Phy1,Phy2,Phy3,Phy4};
@@ -41,13 +41,13 @@ const std::array<Leg, other> DefaultLeg<other>::value = {};
 // check Tensor的一个macro
 template<class SomeTensor>
 void __debug_tensor(const SomeTensor& x, const char* name, std::ostream& os){
-    os << " " << name << "= { rank=" << x.NumDimensions << " dims=[";
-    for(auto i=0;i<x.NumDimensions;i++){
-        os << "(" << x.dimension(i) << "|" << x.leg_info[i] << "), ";
-    }
-    os << "], size=" << x.size();
-    if(x.size()<500){os << ", data=\n" << x << " }\n";}
-    else{os << "}";}
+  os << " " << name << "= { rank=" << x.NumDimensions << " dims=[";
+  for(auto i=0;i<x.NumDimensions;i++){
+    os << "(" << x.dimension(i) << "|" << x.leg_info[i] << "), ";
+  }
+  os << "], size=" << x.size();
+  if(x.size()<500){os << ", data=\n" << x << " }\n";}
+  else{os << "}";}
 }
 #define debug_tensor(x) __debug_tensor(x, #x, std::clog)
 

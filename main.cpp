@@ -10,8 +10,6 @@ const int step = 100;
 const Eigen::TensorFixedSize<double,Eigen::Sizes<2,2,2,2>> another;// = {1,0,0,0,0,-1,2,0,0,2,-1,0,0,0,0,1};
 
 int main(){
-
-
   Eigen::Tensor<double, 3> A,B;
   std::cout << "size=" << A.size() << ", rank=" <<  A.NumDimensions << std::endl;
   A = Eigen::Tensor<double, 3>(phy_D,D,D*2);\
