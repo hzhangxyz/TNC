@@ -57,16 +57,14 @@ index 17cee495f..fb26c68cf 100644
      }
  
 diff --git a/unsupported/Eigen/CXX11/src/Tensor/TensorBase.h b/unsupported/Eigen/CXX11/src/Tensor/TensorBase.h
-index 7d9afa685..12b209bbb 100644
+index 7d9afa685..4a08a5cf3 100644
 --- a/unsupported/Eigen/CXX11/src/Tensor/TensorBase.h
 +++ b/unsupported/Eigen/CXX11/src/Tensor/TensorBase.h
-@@ -873,6 +873,10 @@ class TensorBase<Derived, ReadOnlyAccessors>
+@@ -873,6 +873,8 @@ class TensorBase<Derived, ReadOnlyAccessors>
        return TensorForcedEvalOp<const Derived>(derived());
      }
  
-+    #ifdef EIGEN_TENSOR_PLUGIN
-+    #include EIGEN_TENSOR_PLUGIN
-+    #endif
++    Eigen::array<Leg, DerivedTraits::NumDimensions> leg_info = DefaultLeg<DerivedTraits::NumDimensions>::value;
 +
    protected:
      template <typename Scalar, int NumIndices, int Options, typename IndexType> friend class Tensor;
