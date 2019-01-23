@@ -32,7 +32,7 @@ const std::array<Leg, other> DefaultLeg<other>::value = {};
 
 // 使用plugin并载入Eigen，注意Eigen内部实际上也是做了一些变化的
 #define EIGEN_TENSOR_PLUGIN "eigen_tensor_plugin.h"
-//#define EIGEN_USE_MKL_ALL
+#define EIGEN_USE_MKL_ALL
 //#define EIGEN_USE_MKL_VML
 //#define EIGEN_USE_LAPACKE
 //#define EIGEN_USE_BLAS
@@ -49,6 +49,6 @@ void __debug_tensor(const SomeTensor& x, const char* name, std::ostream& os){
     if(x.size()<500){os << ", data=\n" << x << " }\n";}
     else{os << "}";}
 }
-
 #define debug_tensor(x) __debug_tensor(x, #x, std::clog)
+
 #endif
