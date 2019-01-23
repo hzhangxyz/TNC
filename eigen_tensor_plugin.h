@@ -1,11 +1,12 @@
 Eigen::array<Leg, DerivedTraits::NumDimensions> leg_info;// = default_leg_info();
 
+EIGEN_DEVICE_FUNC
 EIGEN_STRONG_INLINE void set_leg(const Eigen::array<Leg, DerivedTraits::NumDimensions>& new_leg){
     this->leg_info = new_leg;
 }
 
 template<typename OtherDerived, std::size_t ContractNum> EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE
-const TensorContractionOp<const Eigen::array<Eigen::IndexPair<Index>, ContractNum>, const Derived, const OtherDerived, const NoOpOutputKernel>
+EIGEN_DEVICE_FUNC const TensorContractionOp<const Eigen::array<Eigen::IndexPair<Index>, ContractNum>, const Derived, const OtherDerived, const NoOpOutputKernel>
 node_contract(const OtherDerived& other,
               const Eigen::array<Leg, ContractNum>& leg1,
               const Eigen::array<Leg, ContractNum>& leg2,
@@ -46,7 +47,7 @@ node_contract(const OtherDerived& other,
 }
 
 template<std::size_t ContractNum>// 迷，不用unsigned long int 的话template不能匹配
-Eigen::array<Index, ContractNum> get_index_from_leg(const Eigen::array<Leg, ContractNum>& legs) const {
+EIGEN_DEVICE_FUNC Eigen::array<Index, ContractNum> get_index_from_leg(const Eigen::array<Leg, ContractNum>& legs) const {
     /* 输入一个leg array, 返回一个对应的index array， 不存在的leg对应-1(!!!) */
     Eigen::array<Index, ContractNum> res;
     for(auto i=0;i<ContractNum;i++){

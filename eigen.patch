@@ -1,5 +1,5 @@
 diff --git a/unsupported/Eigen/CXX11/src/Tensor/Tensor.h b/unsupported/Eigen/CXX11/src/Tensor/Tensor.h
-index 17cee495f..d858e3287 100644
+index 17cee495f..fb26c68cf 100644
 --- a/unsupported/Eigen/CXX11/src/Tensor/Tensor.h
 +++ b/unsupported/Eigen/CXX11/src/Tensor/Tensor.h
 @@ -334,6 +334,7 @@ class Tensor : public TensorBase<Tensor<Scalar_, NumIndices_, Options_, IndexTyp
@@ -14,7 +14,7 @@ index 17cee495f..d858e3287 100644
        Assign assign(*this, other.derived());
        resize(TensorEvaluator<const Assign, DefaultDevice>(assign, DefaultDevice()).dimensions());
        internal::TensorExecutor<const Assign, DefaultDevice>::run(assign, DefaultDevice());
-+      this->leg_info = other.leg_info;//?
++      this->leg_info = other.leg_info;
      }
      template<typename OtherDerived>
      EIGEN_DEVICE_FUNC
@@ -22,7 +22,7 @@ index 17cee495f..d858e3287 100644
        Assign assign(*this, other.derived());
        resize(TensorEvaluator<const Assign, DefaultDevice>(assign, DefaultDevice()).dimensions());
        internal::TensorExecutor<const Assign, DefaultDevice>::run(assign, DefaultDevice());
-+      this->leg_info = other.leg_info;//?
++      this->leg_info = other.leg_info;
      }
  
      #if EIGEN_HAS_RVALUE_REFERENCES
@@ -44,7 +44,7 @@ index 17cee495f..d858e3287 100644
        Assign assign(*this, other);
        resize(TensorEvaluator<const Assign, DefaultDevice>(assign, DefaultDevice()).dimensions());
        internal::TensorExecutor<const Assign, DefaultDevice>::run(assign, DefaultDevice());
-+      this->leg_info = other.leg_info;//?
++      this->leg_info = other.leg_info;
        return *this;
      }
      template<typename OtherDerived>
@@ -52,7 +52,7 @@ index 17cee495f..d858e3287 100644
        Assign assign(*this, other);
        resize(TensorEvaluator<const Assign, DefaultDevice>(assign, DefaultDevice()).dimensions());
        internal::TensorExecutor<const Assign, DefaultDevice>::run(assign, DefaultDevice());
-+      this->leg_info = other.leg_info;//?
++      this->leg_info = other.leg_info;
        return *this;
      }
  
@@ -71,3 +71,85 @@ index 7d9afa685..12b209bbb 100644
    protected:
      template <typename Scalar, int NumIndices, int Options, typename IndexType> friend class Tensor;
      template <typename Scalar, typename Dimensions, int Option, typename IndexTypes> friend class TensorFixedSize;
+diff --git a/unsupported/Eigen/CXX11/src/Tensor/TensorFixedSize.h b/unsupported/Eigen/CXX11/src/Tensor/TensorFixedSize.h
+index 71ba56773..3aeb08d2e 100644
+--- a/unsupported/Eigen/CXX11/src/Tensor/TensorFixedSize.h
++++ b/unsupported/Eigen/CXX11/src/Tensor/TensorFixedSize.h
+@@ -310,12 +310,14 @@ class TensorFixedSize : public TensorBase<TensorFixedSize<Scalar_, Dimensions_,
+     EIGEN_STRONG_INLINE TensorFixedSize(const Self& other)
+       : m_storage(other.m_storage)
+     {
++      this->leg_info = other.leg_info;
+     }
+ 
+ #if EIGEN_HAS_RVALUE_REFERENCES
+     EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE TensorFixedSize(Self&& other)
+       : m_storage(other.m_storage)
+     {
++      this->leg_info = other.leg_info;
+     }
+ #endif
+ 
+@@ -326,6 +328,7 @@ class TensorFixedSize : public TensorBase<TensorFixedSize<Scalar_, Dimensions_,
+       typedef TensorAssignOp<TensorFixedSize, const OtherDerived> Assign;
+       Assign assign(*this, other.derived());
+       internal::TensorExecutor<const Assign, DefaultDevice>::run(assign, DefaultDevice());
++      this->leg_info = other.leg_info;
+     }
+     template<typename OtherDerived>
+     EIGEN_DEVICE_FUNC
+@@ -334,6 +337,7 @@ class TensorFixedSize : public TensorBase<TensorFixedSize<Scalar_, Dimensions_,
+       typedef TensorAssignOp<TensorFixedSize, const OtherDerived> Assign;
+       Assign assign(*this, other.derived());
+       internal::TensorExecutor<const Assign, DefaultDevice>::run(assign, DefaultDevice());
++      this->leg_info = other.leg_info;
+     }
+ 
+     EIGEN_DEVICE_FUNC
+@@ -344,6 +348,7 @@ class TensorFixedSize : public TensorBase<TensorFixedSize<Scalar_, Dimensions_,
+       typedef TensorAssignOp<Self, const TensorFixedSize> Assign;
+       Assign assign(*this, other);
+       internal::TensorExecutor<const Assign, DefaultDevice>::run(assign, DefaultDevice());
++      this->leg_info = other.leg_info;
+       return *this;
+     }
+     template<typename OtherDerived>
+@@ -355,6 +360,7 @@ class TensorFixedSize : public TensorBase<TensorFixedSize<Scalar_, Dimensions_,
+       typedef TensorAssignOp<Self, const OtherDerived> Assign;
+       Assign assign(*this, other);
+       internal::TensorExecutor<const Assign, DefaultDevice>::run(assign, DefaultDevice());
++      this->leg_info = other.leg_info;
+       return *this;
+     }
+ 
+diff --git a/unsupported/Eigen/CXX11/src/Tensor/TensorMap.h b/unsupported/Eigen/CXX11/src/Tensor/TensorMap.h
+index 28f629080..3e5f6ddd7 100644
+--- a/unsupported/Eigen/CXX11/src/Tensor/TensorMap.h
++++ b/unsupported/Eigen/CXX11/src/Tensor/TensorMap.h
+@@ -105,7 +105,9 @@ template<typename PlainObjectType, int Options_, template <class> class MakePoin
+ 
+     EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE TensorMap(PlainObjectType& tensor)
+       : m_data(tensor.data()), m_dimensions(tensor.dimensions())
+-    { }
++    {
++      this->leg_info = tensor.leg_info;
++    }
+ 
+     EIGEN_DEVICE_FUNC
+     EIGEN_STRONG_INLINE Index rank() const { return m_dimensions.rank(); }
+@@ -302,6 +304,7 @@ template<typename PlainObjectType, int Options_, template <class> class MakePoin
+       typedef TensorAssignOp<Self, const Self> Assign;
+       Assign assign(*this, other);
+       internal::TensorExecutor<const Assign, DefaultDevice>::run(assign, DefaultDevice());
++      this->leg_info = other.leg_info;
+       return *this;
+     }
+ 
+@@ -312,6 +315,7 @@ template<typename PlainObjectType, int Options_, template <class> class MakePoin
+       typedef TensorAssignOp<Self, const OtherDerived> Assign;
+       Assign assign(*this, other);
+       internal::TensorExecutor<const Assign, DefaultDevice>::run(assign, DefaultDevice());
++      this->leg_info = other.leg_info;
+       return *this;
+     }
+ 
