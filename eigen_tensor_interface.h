@@ -54,6 +54,19 @@ OOO
 //#define EIGEN_USE_BLAS
 #include <Eigen/CXX11/Tensor>
 
+// check Tensor的一个macro
+template<typename TensorType>
+void __debug_tensor(const TensorType& x, const char* name, std::ostream& os){
+  os << " " << name << "= { rank=" << x.NumDimensions << " dims=[";
+  for(auto i=0;i<x.NumDimensions;i++){
+    os << "(" << x.dimension(i) << "|" << x.leg_info[i] << "), ";
+  }
+  os << "], size=" << x.size();
+  if(x.size()<500){os << ", data=\n" << x << " }\n";}
+  else{os << "}";}
+}
+#define debug_tensor(x) __debug_tensor(x, #x, std::clog)
+
 /* contraction */
 //定义三个index用的macro，这样方便，写函数的话vector和map的格式都不一样，这里类型检查看起来也没比宏强多少
 #define find_in(it, pool) std::find((pool).begin(), (pool).end(), it)
@@ -73,7 +86,9 @@ node_contract(const TensorType1 tensor1,
               std::map<Leg,Leg> map1=std::map<Leg,Leg>{},
               std::map<Leg,Leg> map2=std::map<Leg,Leg>{}) {
   // 构造给eigen用的缩并脚标对
-  Eigen::array<Eigen::IndexPair<typename Eigen::internal::traits<TensorType1>::Index>, ContractNum> dims;
+  typedef Eigen::internal::traits<TensorType1> Traits;
+  typedef typename Traits::Index Index;
+  Eigen::array<Eigen::IndexPair<Index>, ContractNum> dims;
   for(auto i=0; i<ContractNum; i++){
     dims[i].first = get_index(leg1[i], tensor1.leg_info);
   }
@@ -106,50 +121,40 @@ node_contract(const TensorType1 tensor1,
 }
 
 /* svd */
-/*
+
 template<typename TensorType, std::size_t SplitNum>
 EIGEN_DEVICE_FUNC void node_svd(const TensorType& tensor, const Eigen::array<Leg, SplitNum>& legs) {
   typedef Eigen::internal::traits<TensorType> Traits;
   typedef typename Traits::Index Index;
+  typedef typename Traits::Scalar Scalar;
   static const int Rank = Traits::NumDimensions;
   static const int LeftRank = SplitNum;
   static const int RightRank = Rank - SplitNum;
   //first get the shape and analysis
   //auto whole_legs = tensor.dimensions();
-  std::size_t left_size=1, right_size=1;
-  std::size_t left_index = 0, right_index = SplitNum;
+  Index left_size=1, right_size=1;
+  Index left_index = 0, right_index = SplitNum;
+  Eigen::array<Index, Rank> to_shuffle;
   for(int i=0;i<Rank;i++){
-    auto index = find_in(tensor.leg_info[i], legs);
-    if(index==legs.end()){
+    if(not_found(tensor.leg_info[i], legs)){
+      // 放右边
       right_size *= tensor.dimension(i);
-      new_shape;
+      to_shuffle[right_index++] = i;
+    }else{
+      // 放左边
+      left_size *= tensor.dimension(i);
+      to_shuffle[left_index++] = i;
     }
   }
-  auto left_index = tensor.get_index_from_leg(legs);
-  Eigen::array<Index, Traits::NumDimensions-SplitNum> right_index;
-  int head = 0;
-  for(Index i=0;i<Traits::NumDimensions;i++){
-    if(find_in(i, left_index)==left_index.end()){
-      right_index[head++] = i;
-    }
-  }
+  TensorType tmp = tensor.shuffle(to_shuffle);
+  Eigen::Tensor<Scalar, 2> reshaped = tmp.reshape(Eigen::array<Index, 2>{left_size, right_size});
+  debug_tensor(tmp);
+  debug_tensor(reshaped);
 }
-*/
+
 #undef get_index
 #undef not_found
 #undef find_in
 
-// check Tensor的一个macro
-template<typename TensorType>
-void __debug_tensor(const TensorType& x, const char* name, std::ostream& os){
-  os << " " << name << "= { rank=" << x.NumDimensions << " dims=[";
-  for(auto i=0;i<x.NumDimensions;i++){
-    os << "(" << x.dimension(i) << "|" << x.leg_info[i] << "), ";
-  }
-  os << "], size=" << x.size();
-  if(x.size()<500){os << ", data=\n" << x << " }\n";}
-  else{os << "}";}
-}
-#define debug_tensor(x) __debug_tensor(x, #x, std::clog)
 
 #endif

@@ -11,15 +11,12 @@ const Eigen::TensorFixedSize<double,Eigen::Sizes<2,2,2,2>> another;// = {1,0,0,0
 
 int main(){
   Eigen::Tensor<double, 3> A,B;
-  debug_tensor(A);
   A = Eigen::Tensor<double, 3>(phy_D,D,D*2);\
   A.setRandom();
   A.leg_info = {Phy1,Left,Right};
   B = Eigen::Tensor<double, 3>(phy_D,D*2,D);
   B.setRandom();
   B.leg_info = {Phy2,Left,Right};// 顺序不能换 random 和set leg
-  debug_tensor(A);
-  debug_tensor(B);
   Eigen::Tensor<double, 3> tt = A;
   debug_tensor(tt);
 
@@ -27,4 +24,13 @@ int main(){
   debug_tensor(AB);
 
   debug_tensor(Hamiltonian);
+  Eigen::Tensor<double, 4> Test(2,3,4,5);
+  Test.setRandom();
+  Test(0,0,0,0) = 0;
+  Test(1,0,0,0) = 2;
+  Test(0,1,0,0) = 3;
+  Test(0,0,1,0) = 4;
+  Test(0,0,0,1) = 5;
+  debug_tensor(Test);
+  node_svd(Test, Eigen::array<Leg, 2>{Phy3, Phy2});
 }
