@@ -1,4 +1,4 @@
-#include "include.h"
+#include "eigen_tensor_interface.h"
 
 const int L=10;
 const int D=4;
@@ -14,10 +14,10 @@ int main(){
   std::cout << "size=" << A.size() << ", rank=" <<  A.NumDimensions << std::endl;
   A = Eigen::Tensor<double, 3>(phy_D,D,D*2);\
   A.setRandom();
-  A.set_leg({Phy1,Left,Right});
+  A.leg_info = {Phy1,Left,Right};
   B = Eigen::Tensor<double, 3>(phy_D,D*2,D);
   B.setRandom();
-  B.set_leg({Phy2,Left,Right});// 顺序不能换 random 和set leg
+  B.leg_info = {Phy2,Left,Right};// 顺序不能换 random 和set leg
 
   debug_tensor(A);
   //std::cout << Hamiltonian.leg_info[0] << std::endl;

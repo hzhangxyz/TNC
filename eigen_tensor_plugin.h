@@ -1,10 +1,5 @@
 Eigen::array<Leg, DerivedTraits::NumDimensions> leg_info = DefaultLeg<DerivedTraits::NumDimensions>::value;
 
-EIGEN_DEVICE_FUNC
-EIGEN_STRONG_INLINE void set_leg(const Eigen::array<Leg, DerivedTraits::NumDimensions>& new_leg){
-  this->leg_info = new_leg;
-}
-
 #define find_in(it, pool) std::find((pool).begin(), (pool).end(), it)
 
 template<typename OtherDerived, std::size_t ContractNum> EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE
@@ -42,7 +37,6 @@ node_contract(const OtherDerived& other,
   #undef check_in_and_map
   return res;
 }
-
 
 template<std::size_t ContractNum>
 EIGEN_DEVICE_FUNC Eigen::array<Index, ContractNum> get_index_from_leg(const Eigen::array<Leg, ContractNum>& legs) const {
