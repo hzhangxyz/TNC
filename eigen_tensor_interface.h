@@ -127,7 +127,7 @@ template<typename TensorType, std::size_t SplitNum>
 EIGEN_DEVICE_FUNC Eigen::JacobiSVD<Eigen::Matrix<typename Eigen::internal::traits<TensorType>::Scalar,
                                                  Eigen::Dynamic,
                                                  Eigen::Dynamic>, Eigen::HouseholderQRPreconditioner>
-node_svd(const TensorType& tensor, const Eigen::array<Leg, SplitNum>& legs) {
+node_svd(const TensorType& tensor, const Eigen::array<Leg, SplitNum>& legs, Leg new_leg) {
   typedef Eigen::internal::traits<TensorType> Traits;
   typedef typename Traits::Index Index;
   typedef typename Traits::Scalar Scalar;
@@ -136,27 +136,40 @@ node_svd(const TensorType& tensor, const Eigen::array<Leg, SplitNum>& legs) {
   static const int RightRank = Rank - SplitNum;
   // 首先按照leg，分别把整个tensor的legs分左右两边
   Index left_size=1, right_size=1;
-  Index left_index = 0, right_index = SplitNum;
+  Index left_index = 0, right_index = 0;
   Eigen::array<Index, Rank> to_shuffle;
+  Eigen::array<Index, LeftRank + 1> left_new_shape;
+  Eigen::array<Index, RightRank + 1> right_new_shape;
+  Eigen::array<Leg, LeftRank + 1> left_new_leg;
+  Eigen::array<Leg, RightRank + 1> right_new_leg;
   for(int i=0;i<Rank;i++){
     if(not_found(tensor.leg_info[i], legs)){
       // 放右边
       right_size *= tensor.dimension(i);
-      to_shuffle[right_index++] = i;
+      right_new_shape[right_index] = tensor.dimension(i);
+      right_new_leg[right_index] = tensor.leg_info[i];
+      to_shuffle[SplitNum+right_index++] = i;
     }else{
       // 放左边
       left_size *= tensor.dimension(i);
+      left_new_shape[left_index] = tensor.dimension(i);
+      left_new_leg[left_index] = tensor.leg_info[i];
       to_shuffle[left_index++] = i;
     }
   }
+  Index min_size = left_size<right_size?left_size:right_size;
+  left_new_leg[left_index] = right_new_leg[right_index] = new_leg;
+  left_new_shape[left_index] = right_new_shape[right_index] = min_size;
   auto shuffled = tensor.shuffle(to_shuffle);
   Eigen::Tensor<Scalar, 2> reshaped = shuffled.reshape(Eigen::array<Index, 2>{left_size, right_size});
   // shuffle并reshape，当作matrix然后就可以svd了
-  typedef Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic> MatrixS;
+  typedef Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic> MatrixS;// 一定需要是dynamic，不然svd中的matrix会变成静态
   Eigen::Map<MatrixS> matrix(reshaped.data(), left_size, right_size);
   //debug_tensor(reshaped);
   std::cout << matrix << std::endl;
-  return Eigen::JacobiSVD<MatrixS, Eigen::HouseholderQRPreconditioner> (matrix, Eigen::ComputeThinU | Eigen::ComputeThinV);
+  Eigen::JacobiSVD<MatrixS, Eigen::HouseholderQRPreconditioner> svd(matrix, Eigen::ComputeThinU | Eigen::ComputeThinV);
+  Eigen::Tensor<Scalar, LeftRank+1> U(left_new_shape);
+  return svd;
 }
 
 #undef get_index
