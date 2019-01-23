@@ -2,7 +2,7 @@ Eigen::array<Leg, DerivedTraits::NumDimensions> leg_info = DefaultLeg<DerivedTra
 
 #define find_in(it, pool) std::find((pool).begin(), (pool).end(), it)
 
-template<typename OtherDerived, std::size_t ContractNum> EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE
+/*template<typename OtherDerived, std::size_t ContractNum>
 EIGEN_DEVICE_FUNC const TensorContractionOp<const Eigen::array<Eigen::IndexPair<Index>, ContractNum>, const Derived, const OtherDerived, const NoOpOutputKernel>
 node_contract(const OtherDerived& other,
               const Eigen::array<Leg, ContractNum>& leg1,
@@ -22,7 +22,7 @@ node_contract(const OtherDerived& other,
     if(find_in(it, legs)==legs.end()){\
       auto leg = map.find(it);\
       if(leg==map.end()){\
-        res.leg_info[i++] = legs[j];\
+        res.leg_info[i++] = it;\
       }else{\
         res.leg_info[i++] = leg->second;\
       }\
@@ -36,7 +36,7 @@ node_contract(const OtherDerived& other,
   }
   #undef check_in_and_map
   return res;
-}
+}*/
 
 template<std::size_t ContractNum>
 EIGEN_DEVICE_FUNC Eigen::array<Index, ContractNum> get_index_from_leg(const Eigen::array<Leg, ContractNum>& legs) const {

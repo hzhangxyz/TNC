@@ -30,6 +30,8 @@ const std::array<Leg, 4> DefaultLeg<4>::value = {Phy1,Phy2,Phy3,Phy4};
 template <std::size_t other>
 const std::array<Leg, other> DefaultLeg<other>::value = {};
 /*
+Hamiltonian:
+
 1 2
 | |
 OOO
@@ -45,6 +47,54 @@ OOO
 //#define EIGEN_USE_BLAS
 #include <Eigen/CXX11/Tensor>
 
+// contraction
+#define find_in(it, pool) std::find((pool).begin(), (pool).end(), it)
+#define not_found(it, pool) find_in(it, pool) == (pool).end()
+#define get_index(it, pool) std::distance((pool).begin(), find_in(it, pool))
+
+template<typename TensorType1, typename TensorType2, std::size_t ContractNum>
+EIGEN_DEVICE_FUNC const Eigen::TensorContractionOp<const Eigen::array<Eigen::IndexPair<typename Eigen::internal::traits<TensorType1>::Index>, ContractNum>,
+                                                   const TensorType1,
+                                                   const TensorType2,
+                                                   const Eigen::NoOpOutputKernel>
+node_contract(const TensorType1 tensor1,
+              const TensorType2 tensor2,
+              const Eigen::array<Leg, ContractNum>& leg1,
+              const Eigen::array<Leg, ContractNum>& leg2,
+              std::map<Leg,Leg> map1=std::map<Leg,Leg>{},
+              std::map<Leg,Leg> map2=std::map<Leg,Leg>{}) {
+  Eigen::array<Eigen::IndexPair<typename Eigen::internal::traits<TensorType1>::Index>, ContractNum> dims;
+  for(auto i=0; i<ContractNum; i++){
+    dims[i].first = get_index(leg1[i], tensor1.leg_info);
+  }
+  for(auto i=0; i<ContractNum; i++){
+    dims[i].second = get_index(leg2[i], tensor2.leg_info);
+  }
+  auto res = tensor1.contract(tensor2, dims);
+  auto i=0;
+  #define check_in_and_map(it, legs, map) {\
+    if(not_found(it, legs)){\
+      auto leg = map.find(it);\
+      if(leg==map.end()){\
+        res.leg_info[i++] = it;\
+      }else{\
+        res.leg_info[i++] = leg->second;\
+      }\
+    }\
+  }
+  for(auto j=0;j<tensor1.leg_info.size();j++){
+    check_in_and_map(tensor1.leg_info[j], leg1, map1);
+  }
+  for(auto j=0;j<tensor2.leg_info.size();j++){
+    check_in_and_map(tensor2.leg_info[j], leg2, map2);
+  }
+  #undef check_in_and_map
+  return res;
+}
+
+#undef get_index
+#undef not_found
+#undef find_in
 // svd and qr
 /*#define find_in(it, pool) std::find((pool).begin(), (pool).end(), it)
 template<typename TensorType, std::size_t SplitNum>
