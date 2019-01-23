@@ -28,7 +28,9 @@ std::array<Leg, n>default_leg_info(){
 }*/
 // cpp的类型推演不够强的问题？
 #define EIGEN_TENSOR_PLUGIN "eigen_tensor_plugin.h"
-#define EIGEN_USE_MKL_ALL
+//#define EIGEN_USE_MKL_ALL
+//#define EIGEN_USE_LAPACKE
+//#define EIGEN_USE_BLAS
 #include <Eigen/CXX11/Tensor>
 
 /*template<typename Der, typename Acc>

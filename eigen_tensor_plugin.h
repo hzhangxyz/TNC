@@ -1,7 +1,6 @@
 Eigen::array<Leg, DerivedTraits::NumDimensions> leg_info;// = default_leg_info();
 
 EIGEN_STRONG_INLINE void set_leg(const Eigen::array<Leg, DerivedTraits::NumDimensions>& new_leg){
-
     this->leg_info = new_leg;
 }
 
@@ -14,7 +13,6 @@ node_contract(const OtherDerived& other,
               std::map<Leg,Leg> map2=std::map<Leg,Leg>{}) const {
     Eigen::array<Index, ContractNum> index1 = this->get_index_from_leg(leg1);
     Eigen::array<Index, ContractNum> index2 = other.get_index_from_leg(leg2);
-    Eigen::IndexPair<Index> pair {2, 1};
     Eigen::array<Eigen::IndexPair<Index>, ContractNum> dims;
     for(int i=0;i<ContractNum;i++){
         dims[i].first = index1[i];
