@@ -32,5 +32,8 @@ int main(){
   Test(0,0,1,0) = 4;
   Test(0,0,0,1) = 5;
   debug_tensor(Test);
-  node_svd(Test, Eigen::array<Leg, 2>{Phy3, Phy2});
+  auto svd = node_svd(Test, Eigen::array<Leg, 2>{Phy3, Phy2});
+  std::cout << svd.matrixU();
+  std::cout << svd.singularValues();
+  std::cout << svd.matrixV();
 }

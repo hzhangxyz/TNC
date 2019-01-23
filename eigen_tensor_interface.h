@@ -52,6 +52,7 @@ OOO
 //#define EIGEN_USE_MKL_VML
 //#define EIGEN_USE_LAPACKE
 //#define EIGEN_USE_BLAS
+#include <Eigen/Dense>
 #include <Eigen/CXX11/Tensor>
 
 // check Tensor的一个macro
@@ -123,15 +124,17 @@ node_contract(const TensorType1 tensor1,
 /* svd */
 
 template<typename TensorType, std::size_t SplitNum>
-EIGEN_DEVICE_FUNC void node_svd(const TensorType& tensor, const Eigen::array<Leg, SplitNum>& legs) {
+EIGEN_DEVICE_FUNC Eigen::JacobiSVD<Eigen::Matrix<typename Eigen::internal::traits<TensorType>::Scalar,
+                                                 Eigen::Dynamic,
+                                                 Eigen::Dynamic>, Eigen::HouseholderQRPreconditioner>
+node_svd(const TensorType& tensor, const Eigen::array<Leg, SplitNum>& legs) {
   typedef Eigen::internal::traits<TensorType> Traits;
   typedef typename Traits::Index Index;
   typedef typename Traits::Scalar Scalar;
   static const int Rank = Traits::NumDimensions;
   static const int LeftRank = SplitNum;
   static const int RightRank = Rank - SplitNum;
-  //first get the shape and analysis
-  //auto whole_legs = tensor.dimensions();
+  // 首先按照leg，分别把整个tensor的legs分左右两边
   Index left_size=1, right_size=1;
   Index left_index = 0, right_index = SplitNum;
   Eigen::array<Index, Rank> to_shuffle;
@@ -146,10 +149,14 @@ EIGEN_DEVICE_FUNC void node_svd(const TensorType& tensor, const Eigen::array<Leg
       to_shuffle[left_index++] = i;
     }
   }
-  TensorType tmp = tensor.shuffle(to_shuffle);
-  Eigen::Tensor<Scalar, 2> reshaped = tmp.reshape(Eigen::array<Index, 2>{left_size, right_size});
-  debug_tensor(tmp);
-  debug_tensor(reshaped);
+  auto shuffled = tensor.shuffle(to_shuffle);
+  Eigen::Tensor<Scalar, 2> reshaped = shuffled.reshape(Eigen::array<Index, 2>{left_size, right_size});
+  // shuffle并reshape，当作matrix然后就可以svd了
+  typedef Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic> MatrixS;
+  Eigen::Map<MatrixS> matrix(reshaped.data(), left_size, right_size);
+  //debug_tensor(reshaped);
+  std::cout << matrix << std::endl;
+  return Eigen::JacobiSVD<MatrixS, Eigen::HouseholderQRPreconditioner> (matrix, Eigen::ComputeThinU | Eigen::ComputeThinV);
 }
 
 #undef get_index

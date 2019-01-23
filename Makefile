@@ -1,11 +1,12 @@
+CXXFLAGS= -I./eigen-git-mirror -I./eigen-git-mirror/unsupported -g -L/opt/intel/mkl/lib/intel64 -Wl,--no-as-needed -lmkl_intel_lp64 -lmkl_intel_thread -lmkl_core -liomp5 -lpthread -lm -ldl
 gcc:
-	g++ main.cpp -I./eigen-git-mirror/unsupported -g
+	g++ main.cpp $(CXXFLAGS)
 	./a.out
 
 icc:
-	icc main.cpp -I./eigen-git-mirror/unsupported -g
+	icc main.cpp $(CXXFLAGS)
 	./a.out
 
 clang:
-	clang++ main.cpp -I./eigen-git-mirror/unsupported -g
+	clang++ main.cpp $(CXXFLAGS)
 	./a.out
