@@ -1,5 +1,5 @@
-#ifndef EIGEN_TENSOR_INTERFACE_H
-#define EIGEN_TENSOR_INTERFACE_H
+#ifndef EIGEN_NODE_H
+#define EIGEN_NODE_H
 #include <iostream>
 #include <array>
 #include <vector>

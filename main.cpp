@@ -1,6 +1,6 @@
 #include <iostream>
 #include <cassert>
-#include "eigen_tensor_interface.h"
+#include "eigen_node.h"
 
 void test_copy_and_leg_info(){
   // Tensor
