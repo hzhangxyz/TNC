@@ -238,7 +238,8 @@ EIGEN_DEVICE_FUNC const std::tuple<Eigen::Tensor<typename Eigen::internal::trait
                                                  Eigen::internal::traits<TensorType>::NumDimensions-SplitNum+1>>
 node_qr(const TensorType& tensor,
          const Eigen::array<Leg, SplitNum>& legs,
-         Leg new_leg)
+         Leg new_leg,
+         bool computeR = true)
 {
   // 先各种重命名烦人的东西
   typedef Eigen::internal::traits<TensorType> Traits;
@@ -291,24 +292,28 @@ node_qr(const TensorType& tensor,
   // 再把矩阵变回tensor
   Eigen::Tensor<Scalar, LeftRank+1> Q(left_new_shape);
   Eigen::Tensor<Scalar, RightRank+1> R(right_new_shape);
-  Eigen::Map<MatrixS> matrixQ (Q.data(), left_size, min_size);
-  Eigen::Map<MatrixS> matrixR (R.data(), min_size, right_size);
   // 创建matrix map， 然后Q使用eigen的函数乘上identity，R使用matrixQR再删掉一些东西
-  matrixQ = MatrixS::Identity(min_size,right_size);
-  matrixQ = qr.householderQ() * matrixQ;
-  for(int j=0;j<right_size;j++)
+  Eigen::Map<MatrixS> matrixQ (Q.data(), left_size, min_size);
+  matrixQ = qr.householderQ() * MatrixS::Identity(left_size,min_size);
+  if(computeR)
   {
-    for(int i=0;i<min_size;i++)
+    Eigen::Map<MatrixS> matrixR (R.data(), min_size, right_size);
+    auto matrixQR = qr.matrixQR();
+    for(auto j=0;j<right_size;j++)
     {
-      if(i>j)
+      for(auto i=0;i<min_size;i++)
       {
-        matrixR(i,j) = 0;
-      }else{
-        matrixR(i,j) = qr.matrixQR(i,j);
+        if(i>j)
+        {
+          matrixR(i,j) = 0;
+        }else{
+          matrixR(i,j) = matrixQR(i,j);
+        }
       }
     }
   }
-  // 注意,这里的截断使用了列优先的性质,需要截断的那个脚是在最后面的
+  Q.leg_info = left_new_leg;
+  R.leg_info = right_new_leg;
   return std::tuple<Eigen::Tensor<Scalar, LeftRank+1>,
                     Eigen::Tensor<Scalar, RightRank+1>> {Q, R};
 }

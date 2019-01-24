@@ -73,9 +73,38 @@ void test_svd(){
   assert(abs(tmp-A(1,1,3,2))<0.1);
 }
 
+void test_qr(){
+  Eigen::TensorFixedSize<double, Eigen::Sizes<2,3,4,5>> A;
+  A.setRandom();
+  A.leg_info = {Left, Up, Down, Right};
+  auto qr = node_qr(A, Eigen::array<Leg, 2>{Up, Down}, Phy);
+  //debug_tensor(A);
+  //debug_tensor(std::get<0>(qr));
+  //debug_tensor(std::get<1>(qr));
+  double tmp = 0;
+  for(int i=0;i<10;i++){
+    tmp += std::get<0>(qr)(1,1,i) * std::get<1>(qr)(i,0,3);
+  }
+  assert(abs(tmp-A(0,1,1,3))<1e-5);
+  assert(std::get<0>(qr).leg_info[0]==Up);
+  assert(std::get<0>(qr).leg_info[1]==Down);
+  assert(std::get<0>(qr).leg_info[2]==Phy);
+  assert(std::get<1>(qr).leg_info[0]==Phy);
+  assert(std::get<1>(qr).leg_info[1]==Left);
+  assert(std::get<1>(qr).leg_info[2]==Right);
+  Eigen::TensorFixedSize<double, Eigen::Sizes<2,3,4,5>> B;
+  B.setRandom();
+  B.leg_info = {Left, Up, Down, Right};
+  auto qr2 = node_qr(B, Eigen::array<Leg, 2>{Left, Right}, Phy, false);
+  debug_tensor(B);
+  debug_tensor(std::get<0>(qr2));
+  debug_tensor(std::get<1>(qr2));
+}
+
 int main(){
   test_copy_and_leg_info();
   test_contract();
   test_svd();
+  test_qr();
   return 0;
 }
