@@ -65,10 +65,11 @@ void test_svd(){
   for(int i=0;i<cut;i++){
     tmp += std::get<0>(svd)(1,3,i) * std::get<1>(svd)(i) * std::get<2>(svd)(1,2,i);
   }
-  for(int i=0;i<cut;i++){
-    std::cout << std::get<1>(svd)(i) << " ";
-  }
-  std::cout << "\n" << tmp << "-" << A(1,1,3,2) << "=" << tmp-A(1,1,3,2) << std::endl;
+  //for(int i=0;i<cut;i++){
+  //  std::cout << std::get<1>(svd)(i) << " ";
+  //}
+  //std::cout << "\n" << tmp << "-" << A(1,1,3,2) << "=" << tmp-A(1,1,3,2) << std::endl;
+  assert(std::get<1>(svd)(0)>std::get<1>(svd)(1));
   assert(abs(tmp-A(1,1,3,2))<0.1);
 }
 
