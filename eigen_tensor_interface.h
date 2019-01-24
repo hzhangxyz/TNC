@@ -150,10 +150,10 @@ node_contract(const TensorType1 tensor1,
 /* svd */
 // svd返回的是含有U,S,V的一个tuple
 template<typename TensorType, std::size_t SplitNum>
-std::tuple<Eigen::Tensor<typename Eigen::internal::traits<TensorType>::Scalar, SplitNum+1>,
-           Eigen::Tensor<typename Eigen::internal::traits<TensorType>::Scalar, 1>,
-           Eigen::Tensor<typename Eigen::internal::traits<TensorType>::Scalar,
-                         Eigen::internal::traits<TensorType>::NumDimensions-SplitNum+1>>
+EIGEN_DEVICE_FUNC const std::tuple<Eigen::Tensor<typename Eigen::internal::traits<TensorType>::Scalar, SplitNum+1>,
+                                   Eigen::Tensor<typename Eigen::internal::traits<TensorType>::Scalar, 1>,
+                                   Eigen::Tensor<typename Eigen::internal::traits<TensorType>::Scalar,
+                                                 Eigen::internal::traits<TensorType>::NumDimensions-SplitNum+1>>
 node_svd(const TensorType& tensor,
          const Eigen::array<Leg, SplitNum>& legs,
          Leg new_leg,
