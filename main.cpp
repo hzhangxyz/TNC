@@ -45,10 +45,31 @@ void test_svd(){
   A.setRandom();
   A.leg_info = {Left, Up, Down, Right};
   auto svd = node_svd(A, Eigen::array<Leg, 2>{Up, Down}, Phy);
-  debug_tensor(A);
-  debug_tensor(std::get<0>(svd));
-  debug_tensor(std::get<1>(svd));
-  debug_tensor(std::get<2>(svd));
+  //debug_tensor(A);
+  //debug_tensor(std::get<0>(svd));
+  //debug_tensor(std::get<1>(svd));
+  //debug_tensor(std::get<2>(svd));
+  float tmp = 0;
+  for(int i=0;i<10;i++){
+    tmp += std::get<0>(svd)(2,3,i) * std::get<1>(svd)(i) * std::get<2>(svd)(1,4,i);
+  }
+  assert(abs(tmp-A(1,2,3,4))<1e-5);
+  tmp = 0;
+  for(int i=0;i<10;i++){
+    tmp += std::get<0>(svd)(1,3,i) * std::get<1>(svd)(i) * std::get<2>(svd)(1,2,i);
+  }
+  assert(abs(tmp-A(1,1,3,2))<1e-5);
+  int cut = 8;
+  auto svd_cut = node_svd(A, Eigen::array<Leg, 2>{Up, Down}, Phy, cut);
+  tmp = 0;
+  for(int i=0;i<cut;i++){
+    tmp += std::get<0>(svd)(1,3,i) * std::get<1>(svd)(i) * std::get<2>(svd)(1,2,i);
+  }
+  for(int i=0;i<cut;i++){
+    std::cout << std::get<1>(svd)(i) << " ";
+  }
+  std::cout << "\n" << tmp << "-" << A(1,1,3,2) << "=" << tmp-A(1,1,3,2) << std::endl;
+  assert(abs(tmp-A(1,1,3,2))<0.1);
 }
 
 int main(){
