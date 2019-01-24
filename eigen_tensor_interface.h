@@ -288,15 +288,16 @@ node_qr(const TensorType& tensor,
   Eigen::Tensor<Scalar, 2> reshaped = shuffled.reshape(Eigen::array<Index, 2>{left_size, right_size});
   Eigen::Map<MatrixS> matrix(reshaped.data(), left_size, right_size);
   // 调用householder QR
-  Eigen::HouseholderQR<MatrixS> qr(matrix);
-  // 再把矩阵变回tensor
+  Eigen::HouseholderQR<Eigen::Ref<MatrixS>> qr(matrix);
+  // 再把矩阵变回tensor, R先不malloc，因为可能不需要
   Eigen::Tensor<Scalar, LeftRank+1> Q(left_new_shape);
-  Eigen::Tensor<Scalar, RightRank+1> R(right_new_shape);
+  Eigen::Tensor<Scalar, RightRank+1> R;//(right_new_shape);
   // 创建matrix map， 然后Q使用eigen的函数乘上identity，R使用matrixQR再删掉一些东西
   Eigen::Map<MatrixS> matrixQ (Q.data(), left_size, min_size);
   matrixQ = qr.householderQ() * MatrixS::Identity(left_size,min_size);
   if(computeR)
   {
+    R = Eigen::Tensor<Scalar, RightRank+1> (right_new_shape);
     Eigen::Map<MatrixS> matrixR (R.data(), min_size, right_size);
     auto matrixQR = qr.matrixQR();
     for(auto j=0;j<right_size;j++)
