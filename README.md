@@ -13,6 +13,7 @@ Eigen::array<Leg, DerivedTraits::NumDimensions> leg_info = DefaultLeg<DerivedTra
 - contract
 - svd， qr
 - transpose
+- multiple
 
 ## 一些与Eigen相关的问题
 
@@ -26,7 +27,3 @@ Eigen::array<Leg, DerivedTraits::NumDimensions> leg_info = DefaultLeg<DerivedTra
 
 ## SVD，QR选择的问题
 - (D=10)×2×2=40大概是svd的量级，是16的两倍多，所以就用BDCSVD吧
-
-## 可能需要的method
-- transpose
-- join（multiple）

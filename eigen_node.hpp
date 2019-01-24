@@ -231,7 +231,7 @@ node_svd(const TensorType& tensor,
 
 /* qr */
 // qr外部和svd一样，里面需要处理一下
-// svd返回的是含有U,S,V的一个tuple
+// http://www.netlib.org/lapack/explore-html/df/dc5/group__variants_g_ecomputational_ga3766ea903391b5cf9008132f7440ec7b.html
 template<typename TensorType, std::size_t SplitNum>
 EIGEN_DEVICE_FUNC std::tuple<Eigen::Tensor<typename Eigen::internal::traits<TensorType>::Scalar, SplitNum+1>,
                              Eigen::Tensor<typename Eigen::internal::traits<TensorType>::Scalar,
@@ -283,7 +283,7 @@ node_qr(const TensorType& tensor,
   // 然后把最后一个脚加上去
   left_new_leg[left_index] = right_new_leg[0] = new_leg;
   left_new_shape[left_index] = right_new_shape[0] = min_size;
-  // shuffle并reshape，当作matrix然后就可以svd了
+  // shuffle并reshape，当作matrix然后就可以分解了
   auto shuffled = tensor.shuffle(to_shuffle);
   Eigen::Tensor<Scalar, 2> reshaped = shuffled.reshape(Eigen::array<Index, 2>{left_size, right_size});
   Eigen::Map<MatrixS> matrix(reshaped.data(), left_size, right_size);
@@ -325,7 +325,8 @@ EIGEN_DEVICE_FUNC const Eigen::TensorShufflingOp<
                   Eigen::internal::traits<TensorType>::NumDimensions>,
                   const TensorType>
 node_transpose(const TensorType& tensor,
-               const Eigen::array<Leg, Eigen::internal::traits<TensorType>::NumDimensions>& new_legs) {
+               const Eigen::array<Leg, Eigen::internal::traits<TensorType>::NumDimensions>& new_legs)
+{
   // 惯例，alias各种东西
   typedef Eigen::internal::traits<TensorType> Traits;
   typedef typename Traits::Index Index;
@@ -343,6 +344,33 @@ node_transpose(const TensorType& tensor,
   res.leg_info = new_legs;
   return res;
 }
+
+/* multiple */
+// https://stackoverflow.com/questions/47040173/how-to-multiple-two-eigen-tensors-along-batch-dimension
+template <typename TensorType>
+EIGEN_DEVICE_FUNC const TensorType
+node_multiple(const TensorType& tensor,
+              const Eigen::Tensor<typename Eigen::internal::traits<TensorType>::Scalar, 1>& vector,
+              Leg leg)
+{
+  typedef Eigen::internal::traits<TensorType> Traits;
+  typedef typename Traits::Index Index;
+  typedef typename Traits::Scalar Scalar;
+  static const std::size_t Rank = Traits::NumDimensions;
+  auto index = get_index(leg, tensor.leg_info);
+  // 分别创建to_reshape和to_bcast，然后直接cwise乘起来
+  Eigen::array<Index, Rank> to_reshape; // {1,1,1,1,n,1,1,1,1}
+  std::fill(to_reshape.begin(), to_reshape.end(), 1);
+  to_reshape[index] = tensor.dimension(index);
+  Eigen::array<Index, Rank> to_bcast;
+  for(auto i=0; i<Rank; i++)
+  {
+    to_bcast[i] = tensor.dimension(i);
+  }
+  to_bcast[index] = 1;
+  return tensor * vector.reshape(to_reshape).broadcast(to_bcast);
+}
+
 
 #undef get_index
 #undef not_found

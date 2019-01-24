@@ -131,6 +131,19 @@ void test_transpose(){
   assert(A(0,1,2,3)==B(3,1,0,2));
 }
 
+void test_multiple(){
+  Eigen::TensorFixedSize<int, Eigen::Sizes<2,3,4,5>> A;
+  A.setRandom();
+  A.leg_info = {Left, Up, Down, Right};
+  Eigen::TensorFixedSize<int, Eigen::Sizes<4>> B;
+  B.setValues({1, 2, 3, 4});
+  decltype(A) C = node_multiple(A, B, Down);
+  assert(A(1,2,3,4)*4==C(1,2,3,4));
+  assert(A(1,0,3,2)*4==C(1,0,3,2));
+  assert(A(1,0,2,2)*3==C(1,0,2,2));
+  assert(A(1,1,0,2)==C(1,1,0,2));
+}
+
 int main(){
   test_copy_and_leg_info();
   test_contract();
@@ -138,5 +151,6 @@ int main(){
   test_qr();
   test_scalar();
   test_transpose();
+  test_multiple();
   return 0;
 }
