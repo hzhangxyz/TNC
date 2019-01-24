@@ -40,4 +40,5 @@ int main(){
   debug_tensor(svd.matrixU());
   debug_tensor(svd.singularValues());
   debug_tensor(svd.matrixV());*/
+  return 0;
 }

@@ -163,13 +163,14 @@ node_svd(const TensorType& tensor, const Eigen::array<Leg, SplitNum>& legs, Leg 
   auto shuffled = tensor.shuffle(to_shuffle);
   Eigen::Tensor<Scalar, 2> reshaped = shuffled.reshape(Eigen::array<Index, 2>{left_size, right_size});
   // shuffle并reshape，当作matrix然后就可以svd了
-  typedef Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic> MatrixS;// 一定需要是dynamic，不然svd中的matrix会变成静态
+  typedef Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic> MatrixS;// 一定需要是dynamic，不然svd中的matrix会变成静态(可能?)
   Eigen::Map<MatrixS> matrix(reshaped.data(), left_size, right_size);
   //debug_tensor(reshaped);
   std::cout << matrix << std::endl;
   Eigen::JacobiSVD<MatrixS, Eigen::HouseholderQRPreconditioner> svd(matrix, Eigen::ComputeThinU | Eigen::ComputeThinV);
   Eigen::Tensor<Scalar, LeftRank+1> U(left_new_shape);
   return svd;
+  // 看看tf是怎么处理这个东西的吧
 }
 
 #undef get_index
