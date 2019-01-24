@@ -1,5 +1,5 @@
-#ifndef EIGEN_NODE_H
-#define EIGEN_NODE_H
+#ifndef EIGEN_NODE_HPP
+#define EIGEN_NODE_HPP
 #include <iostream>
 #include <array>
 #include <vector>
