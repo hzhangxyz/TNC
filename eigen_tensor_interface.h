@@ -48,7 +48,7 @@ OOO
 /* 使用plugin并载入Eigen，注意Eigen内部实际上也是做了一些变化的 */
 #define EIGEN_TENSOR_PLUGIN "eigen_tensor_plugin.h"
 // 可能需要mkl blas那些东西
-#define EIGEN_USE_MKL_ALL
+//#define EIGEN_USE_MKL_ALL
 //#define EIGEN_USE_MKL_VML
 //#define EIGEN_USE_LAPACKE
 //#define EIGEN_USE_BLAS
