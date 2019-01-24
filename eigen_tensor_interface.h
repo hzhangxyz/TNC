@@ -128,7 +128,10 @@ std::tuple<Eigen::Tensor<typename Eigen::internal::traits<TensorType>::Scalar, S
            Eigen::Tensor<typename Eigen::internal::traits<TensorType>::Scalar, 1>,
            Eigen::Tensor<typename Eigen::internal::traits<TensorType>::Scalar,
                          Eigen::internal::traits<TensorType>::NumDimensions-SplitNum+1>>
-node_svd(const TensorType& tensor, const Eigen::array<Leg, SplitNum>& legs, Leg new_leg) {
+node_svd(const TensorType& tensor,
+         const Eigen::array<Leg, SplitNum>& legs,
+         Leg new_leg,
+         typename Eigen::internal::traits<TensorType>::Index cut=-1) {
   typedef Eigen::internal::traits<TensorType> Traits;
   typedef typename Traits::Index Index;
   typedef typename Traits::Scalar Scalar;
@@ -139,6 +142,7 @@ node_svd(const TensorType& tensor, const Eigen::array<Leg, SplitNum>& legs, Leg 
   Index left_size=1, right_size=1;
   Index left_index = 0, right_index = 0;
   Eigen::array<Index, Rank> to_shuffle;
+  // 需要计算一下U, V矩阵的样子
   Eigen::array<Index, LeftRank + 1> left_new_shape;
   Eigen::array<Index, RightRank + 1> right_new_shape;
   Eigen::array<Leg, LeftRank + 1> left_new_leg;
@@ -158,7 +162,11 @@ node_svd(const TensorType& tensor, const Eigen::array<Leg, SplitNum>& legs, Leg 
       to_shuffle[left_index++] = i;
     }
   }
+  // 形状什么的都算好了
   Index min_size = left_size<right_size?left_size:right_size;
+  if((cut!=-1)&&(cut<min_size)){
+    min_size = cut;
+  }
   left_new_leg[left_index] = right_new_leg[right_index] = new_leg;
   left_new_shape[left_index] = right_new_shape[right_index] = min_size;
   auto shuffled = tensor.shuffle(to_shuffle);
@@ -166,9 +174,8 @@ node_svd(const TensorType& tensor, const Eigen::array<Leg, SplitNum>& legs, Leg 
   // shuffle并reshape，当作matrix然后就可以svd了
   typedef Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic> MatrixS;
   Eigen::Map<MatrixS> matrix(reshaped.data(), left_size, right_size);
-  //debug_tensor(reshaped);
-  std::cout << matrix << std::endl;
   Eigen::JacobiSVD<MatrixS, Eigen::HouseholderQRPreconditioner> svd(matrix, Eigen::ComputeThinU | Eigen::ComputeThinV);
+  // 再把矩阵变回tensor
   Eigen::Tensor<Scalar, LeftRank+1> U(left_new_shape);
   Eigen::Tensor<Scalar, 1> S(Eigen::array<Index, 1>{min_size});
   Eigen::Tensor<Scalar, RightRank+1> V(right_new_shape);
