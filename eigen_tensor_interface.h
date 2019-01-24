@@ -209,7 +209,8 @@ node_svd(const TensorType& tensor,
   auto shuffled = tensor.shuffle(to_shuffle);
   Eigen::Tensor<Scalar, 2> reshaped = shuffled.reshape(Eigen::array<Index, 2>{left_size, right_size});
   Eigen::Map<MatrixS> matrix(reshaped.data(), left_size, right_size);
-  Eigen::JacobiSVD<MatrixS, Eigen::HouseholderQRPreconditioner> svd(matrix, Eigen::ComputeThinU | Eigen::ComputeThinV);
+  //Eigen::JacobiSVD<MatrixS, Eigen::HouseholderQRPreconditioner> svd(matrix, Eigen::ComputeThinU | Eigen::ComputeThinV);
+  Eigen::BDCSVD<MatrixS> svd(matrix, Eigen::ComputeThinU | Eigen::ComputeThinV);
   // 再把矩阵变回tensor
   Eigen::Tensor<Scalar, LeftRank+1> U(left_new_shape);
   Eigen::Tensor<Scalar, 1> S(Eigen::array<Index, 1>{min_size});

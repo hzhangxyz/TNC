@@ -1,4 +1,4 @@
-CXXFLAGS= -I./eigen-git-mirror -I./eigen-git-mirror/unsupported -g -lblas -llapack
+CXXFLAGS= -I./eigen-git-mirror -I./eigen-git-mirror/unsupported -g -lblas -llapacke
 gcc:
 	g++ main.cpp $(CXXFLAGS)
 	./a.out
