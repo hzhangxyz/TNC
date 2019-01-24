@@ -40,7 +40,7 @@ struct DefaultLeg
 };
 // 如果是4 rank，那大概是哈密顿量，设置一下leg
 template <>
-const std::array<Leg, 4> DefaultLeg<4>::value = {Phy1,Phy2,Phy3,Phy4};
+const std::array<Leg, 4> DefaultLeg<4>::value = {Phy1, Phy2, Phy3, Phy4};
 // 不然的话那就算了
 template <std::size_t other>
 const std::array<Leg, other> DefaultLeg<other>::value = {};
@@ -103,8 +103,8 @@ node_contract(const TensorType1 tensor1,
               const TensorType2 tensor2,
               const Eigen::array<Leg, ContractNum>& leg1,
               const Eigen::array<Leg, ContractNum>& leg2,
-              std::map<Leg,Leg> map1=std::map<Leg,Leg>{},
-              std::map<Leg,Leg> map2=std::map<Leg,Leg>{})
+              std::map<Leg, Leg> map1=std::map<Leg, Leg>{},
+              std::map<Leg, Leg> map2=std::map<Leg, Leg>{})
 {
   // 构造给eigen用的缩并脚标对
   typedef Eigen::internal::traits<TensorType1> Traits;
@@ -215,7 +215,7 @@ node_svd(const TensorType& tensor,
   Eigen::Tensor<Scalar, 1> S(Eigen::array<Index, 1>{min_size});
   Eigen::Tensor<Scalar, RightRank+1> V(right_new_shape);
   // 注意,这里的截断使用了列优先的性质,需要截断的那个脚是在最后面的
-  #define copy_data(src,dst) std::copy(src.data(), src.data()+dst.size(), dst.data())
+  #define copy_data(src, dst) std::copy(src.data(), src.data()+dst.size(), dst.data())
   copy_data(svd.matrixU(), U);
   copy_data(svd.singularValues(), S);
   copy_data(svd.matrixV(), V);
