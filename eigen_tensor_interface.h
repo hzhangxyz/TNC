@@ -229,6 +229,90 @@ node_svd(const TensorType& tensor,
                     Eigen::Tensor<Scalar, RightRank+1>> {U, S, V};
 }
 
+/* qr */
+// qr外部和svd一样，里面需要处理一下
+// svd返回的是含有U,S,V的一个tuple
+template<typename TensorType, std::size_t SplitNum>
+EIGEN_DEVICE_FUNC const std::tuple<Eigen::Tensor<typename Eigen::internal::traits<TensorType>::Scalar, SplitNum+1>,
+                                   Eigen::Tensor<typename Eigen::internal::traits<TensorType>::Scalar,
+                                                 Eigen::internal::traits<TensorType>::NumDimensions-SplitNum+1>>
+node_qr(const TensorType& tensor,
+         const Eigen::array<Leg, SplitNum>& legs,
+         Leg new_leg)
+{
+  // 先各种重命名烦人的东西
+  typedef Eigen::internal::traits<TensorType> Traits;
+  typedef typename Traits::Index Index;
+  typedef typename Traits::Scalar Scalar;
+  static const std::size_t Rank = Traits::NumDimensions;
+  static const std::size_t LeftRank = SplitNum;
+  static const std::size_t RightRank = Rank - SplitNum;
+  typedef Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic> MatrixS;
+  // 首先按照leg，分别把整个tensor的legs分左右两边
+  Index left_size=1, right_size=1;
+  Index left_index = 0, right_index = 0;
+  Eigen::array<Index, Rank> to_shuffle;
+  // 需要计算一下U, V矩阵的样子
+  Eigen::array<Index, LeftRank + 1> left_new_shape;
+  Eigen::array<Index, RightRank + 1> right_new_shape;
+  Eigen::array<Leg, LeftRank + 1> left_new_leg;
+  Eigen::array<Leg, RightRank + 1> right_new_leg;
+  // 开始分了, 记录总size, shape和leg， 注意方向和svd不同
+  for(auto i=0;i<Rank;i++)
+  {
+    if(not_found(tensor.leg_info[i], legs))
+    {
+      // 放右边
+      right_size *= tensor.dimension(i);
+      right_new_shape[right_index+1] = tensor.dimension(i);
+      right_new_leg[right_index+1] = tensor.leg_info[i];
+      to_shuffle[SplitNum+right_index] = i;
+      right_index++;
+    }else{
+      // 放左边
+      left_size *= tensor.dimension(i);
+      left_new_shape[left_index] = tensor.dimension(i);
+      left_new_leg[left_index] = tensor.leg_info[i];
+      to_shuffle[left_index] = i;
+      left_index++;
+    }
+  }
+  // 考虑中间的那个cut
+  auto min_size = left_size<right_size?left_size:right_size;
+  // 然后把最后一个脚加上去
+  left_new_leg[left_index] = right_new_leg[0] = new_leg;
+  left_new_shape[left_index] = right_new_shape[0] = min_size;
+  // shuffle并reshape，当作matrix然后就可以svd了
+  auto shuffled = tensor.shuffle(to_shuffle);
+  Eigen::Tensor<Scalar, 2> reshaped = shuffled.reshape(Eigen::array<Index, 2>{left_size, right_size});
+  Eigen::Map<MatrixS> matrix(reshaped.data(), left_size, right_size);
+  // 调用householder QR
+  Eigen::HouseholderQR<MatrixS> qr(matrix);
+  // 再把矩阵变回tensor
+  Eigen::Tensor<Scalar, LeftRank+1> Q(left_new_shape);
+  Eigen::Tensor<Scalar, RightRank+1> R(right_new_shape);
+  Eigen::Map<MatrixS> matrixQ (Q.data(), left_size, min_size);
+  Eigen::Map<MatrixS> matrixR (R.data(), min_size, right_size);
+  // 创建matrix map， 然后Q使用eigen的函数乘上identity，R使用matrixQR再删掉一些东西
+  matrixQ = MatrixS::Identity(min_size,right_size);
+  matrixQ = qr.householderQ() * matrixQ;
+  for(int j=0;j<right_size;j++)
+  {
+    for(int i=0;i<min_size;i++)
+    {
+      if(i>j)
+      {
+        matrixR(i,j) = 0;
+      }else{
+        matrixR(i,j) = qr.matrixQR(i,j);
+      }
+    }
+  }
+  // 注意,这里的截断使用了列优先的性质,需要截断的那个脚是在最后面的
+  return std::tuple<Eigen::Tensor<Scalar, LeftRank+1>,
+                    Eigen::Tensor<Scalar, RightRank+1>> {Q, R};
+}
+
 #undef get_index
 #undef not_found
 #undef find_in
