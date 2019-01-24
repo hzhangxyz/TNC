@@ -4,10 +4,17 @@
 Eigen::array<Leg, DerivedTraits::NumDimensions> leg_info = DefaultLeg<DerivedTraits::NumDimensions>::value;
 ``` 
 - `Tensor.h` 中的constructor和operator=需要各种复制`leg_info`, 两个来源，一个运算，一个复制(只有在需要resize的时候需要)
-- leg的维护需要手动对各种op做wrap，所以除非在外面设定`leg_info`，只能使用plugin中的几个函数
 - 有一个lapacke.h定义了I的macro引起的冲突bug，重命名即可
+- 在cwise那些东西里加了leg info，从而实现scalar功能
+
+## 外部操作
+- leg的维护需要手动对各种op做wrap，所以除非在外面设定`leg_info`，只能使用plugin中的几个函数
+- scalar在里面实现
+- contract
+- svd， qr
 
 ## 一些与Eigen相关的问题
+
 - contract什么的做不到静态，所以contract什么的都需要动态malloc
 - 可能浪费的copy有：svd和qr中的shuffle，svd和qr的结果再copy回tensor
 
@@ -18,3 +25,7 @@ Eigen::array<Leg, DerivedTraits::NumDimensions> leg_info = DefaultLeg<DerivedTra
 
 ## SVD，QR选择的问题
 - (D=10)×2×2=40大概是svd的量级，是16的两倍多，所以就用BDCSVD吧
+
+## 可能需要的method
+- transpose
+- join（multiple）

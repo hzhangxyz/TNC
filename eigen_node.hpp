@@ -297,23 +297,17 @@ node_qr(const TensorType& tensor,
   matrixQ = qr.householderQ() * MatrixS::Identity(left_size,min_size);
   if(computeR)
   {
+    // 如果设置了computeR（默认true），那么算一下R矩阵
     R = Eigen::Tensor<Scalar, RightRank+1> (right_new_shape);
     Eigen::Map<MatrixS> matrixR (R.data(), min_size, right_size);
     auto matrixQR = qr.matrixQR();
     for(auto j=0;j<right_size;j++)
     {
+      // 截取上三角区域作为R，下面那半都是零
       auto fill_num = (min_size<(j+1))?min_size:(j+1);
       std::copy(&matrixQR(0, j), &matrixQR(0, j)+fill_num, &matrixR(0,j));
       std::fill(&matrixR(0, j)+fill_num, &matrixR(0, j)+min_size, 0);
-      /*for(auto i=0;i<min_size;i++)
-      {
-        if(i>j)
-        {
-          matrixR(i,j) = 0;
-        }else{
-          matrixR(i,j) = matrixQR(i,j);
-        }
-      }*/
+
     }
   }
   // leg处理一下

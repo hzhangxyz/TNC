@@ -105,10 +105,23 @@ void test_qr(){
   assert(std::get<0>(qr2)(1,1,1)=std::get<0>(qr3)(1,1,1));
 }
 
+void test_scalar(){
+  Eigen::TensorFixedSize<double, Eigen::Sizes<2,3,4,5>> A;
+  A.setRandom();
+  A.leg_info = {Left, Up, Down, Right};
+  Eigen::TensorFixedSize<double, Eigen::Sizes<2,3,4,5>> B = A * 2.0;
+  assert(A.leg_info[0]==B.leg_info[0]);
+  assert(A.leg_info[1]==B.leg_info[1]);
+  assert(A.leg_info[2]==B.leg_info[2]);
+  assert(A.leg_info[3]==B.leg_info[3]);
+  assert(A(0,0,1,1)*2.0==B(0,0,1,1));
+}
+
 int main(){
   test_copy_and_leg_info();
   test_contract();
   test_svd();
   test_qr();
+  test_scalar();
   return 0;
 }
