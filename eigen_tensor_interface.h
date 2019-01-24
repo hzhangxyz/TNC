@@ -124,9 +124,10 @@ node_contract(const TensorType1 tensor1,
 /* svd */
 
 template<typename TensorType, std::size_t SplitNum>
-EIGEN_DEVICE_FUNC Eigen::JacobiSVD<Eigen::Matrix<typename Eigen::internal::traits<TensorType>::Scalar,
-                                                 Eigen::Dynamic,
-                                                 Eigen::Dynamic>, Eigen::HouseholderQRPreconditioner>
+std::tuple<Eigen::Tensor<typename Eigen::internal::traits<TensorType>::Scalar, SplitNum+1>,
+           Eigen::Tensor<typename Eigen::internal::traits<TensorType>::Scalar, 1>,
+           Eigen::Tensor<typename Eigen::internal::traits<TensorType>::Scalar,
+                         Eigen::internal::traits<TensorType>::NumDimensions-SplitNum+1>>
 node_svd(const TensorType& tensor, const Eigen::array<Leg, SplitNum>& legs, Leg new_leg) {
   typedef Eigen::internal::traits<TensorType> Traits;
   typedef typename Traits::Index Index;
@@ -163,14 +164,26 @@ node_svd(const TensorType& tensor, const Eigen::array<Leg, SplitNum>& legs, Leg 
   auto shuffled = tensor.shuffle(to_shuffle);
   Eigen::Tensor<Scalar, 2> reshaped = shuffled.reshape(Eigen::array<Index, 2>{left_size, right_size});
   // shuffle并reshape，当作matrix然后就可以svd了
-  typedef Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic> MatrixS;// 一定需要是dynamic，不然svd中的matrix会变成静态(可能?)
+  typedef Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic> MatrixS;
   Eigen::Map<MatrixS> matrix(reshaped.data(), left_size, right_size);
   //debug_tensor(reshaped);
   std::cout << matrix << std::endl;
   Eigen::JacobiSVD<MatrixS, Eigen::HouseholderQRPreconditioner> svd(matrix, Eigen::ComputeThinU | Eigen::ComputeThinV);
   Eigen::Tensor<Scalar, LeftRank+1> U(left_new_shape);
-  return svd;
-  // 看看tf是怎么处理这个东西的吧
+  Eigen::Tensor<Scalar, 1> S(Eigen::array<Index, 1>{min_size});
+  Eigen::Tensor<Scalar, RightRank+1> V(right_new_shape);
+  // 注意,这里的截断使用了列优先的性质,需要截断的那个脚是在最后面的
+  #define copy_data(src,dst) std::copy(src.data(), src.data()+dst.size(), dst.data())
+  copy_data(svd.matrixU(), U);
+  copy_data(svd.singularValues(), S);
+  copy_data(svd.matrixV(), V);
+  #undef copy_data
+  U.leg_info = left_new_leg;
+  S.leg_info = Eigen::array<Leg, 1>{new_leg};
+  V.leg_info = right_new_leg;
+  return std::tuple<Eigen::Tensor<Scalar, LeftRank+1>,
+                    Eigen::Tensor<Scalar, 1>,
+                    Eigen::Tensor<Scalar, RightRank+1>> {U, S, V};
 }
 
 #undef get_index
