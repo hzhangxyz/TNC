@@ -312,6 +312,7 @@ node_qr(const TensorType& tensor,
       }
     }
   }
+  // leg处理一下
   Q.leg_info = left_new_leg;
   R.leg_info = right_new_leg;
   return std::tuple<Eigen::Tensor<Scalar, LeftRank+1>,

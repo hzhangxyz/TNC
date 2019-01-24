@@ -96,9 +96,13 @@ void test_qr(){
   B.setRandom();
   B.leg_info = {Left, Up, Down, Right};
   auto qr2 = node_qr(B, Eigen::array<Leg, 2>{Left, Right}, Phy, false);
-  debug_tensor(B);
-  debug_tensor(std::get<0>(qr2));
-  debug_tensor(std::get<1>(qr2));
+  //debug_tensor(B);
+  //debug_tensor(std::get<0>(qr2));
+  //debug_tensor(std::get<1>(qr2));
+  auto qr3 = node_qr(B, Eigen::array<Leg, 2>{Left, Right}, Phy);
+  //debug_tensor(std::get<0>(qr3));
+  //debug_tensor(std::get<1>(qr3));
+  assert(std::get<0>(qr2)(1,1,1)=std::get<0>(qr3)(1,1,1));
 }
 
 int main(){
