@@ -58,8 +58,8 @@ OOO
 // 可能需要mkl blas那些东西
 //#define EIGEN_USE_MKL_ALL
 //#define EIGEN_USE_MKL_VML
-//#define EIGEN_USE_LAPACKE
-//#define EIGEN_USE_BLAS
+#define EIGEN_USE_LAPACKE
+#define EIGEN_USE_BLAS
 #include <Eigen/Dense>
 #include <Eigen/CXX11/Tensor>
 
