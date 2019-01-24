@@ -301,7 +301,10 @@ node_qr(const TensorType& tensor,
     auto matrixQR = qr.matrixQR();
     for(auto j=0;j<right_size;j++)
     {
-      for(auto i=0;i<min_size;i++)
+      auto fill_num = (min_size<(j+1))?min_size:(j+1);
+      std::copy(&matrixQR(0, j), &matrixQR(0, j)+fill_num, &matrixR(0,j));
+      std::fill(&matrixR(0, j)+fill_num, &matrixR(0, j)+min_size, 0);
+      /*for(auto i=0;i<min_size;i++)
       {
         if(i>j)
         {
@@ -309,7 +312,7 @@ node_qr(const TensorType& tensor,
         }else{
           matrixR(i,j) = matrixQR(i,j);
         }
-      }
+      }*/
     }
   }
   // leg处理一下
@@ -322,6 +325,5 @@ node_qr(const TensorType& tensor,
 #undef get_index
 #undef not_found
 #undef find_in
-
 
 #endif

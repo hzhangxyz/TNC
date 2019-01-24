@@ -10,7 +10,7 @@ Eigen::array<Leg, DerivedTraits::NumDimensions> leg_info = DefaultLeg<DerivedTra
 ## 一些与Eigen相关的问题
 - contract什么的做不到静态，所以contract什么的都需要动态malloc
 - 因为没有asMatrix, asTensor所以svd那些函数中现在多一层复制，不过也因此cut比较方便，但是如果以后有静态的svd的话，这里也是个问题
-- 虽然contract没用，但是svd，qr可以事先malloc内存
+- 虽然contract没用，但是svd，qr可以事先malloc内存，还可能inplace，反正转置的时候需要一次malloc了
 
 ## SVD，QR选择的问题
 - (D=10)×2×2=40大概是svd的量级，是16的两倍多，所以就用BDCSVD吧
