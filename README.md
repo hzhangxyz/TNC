@@ -12,6 +12,7 @@ Eigen::array<Leg, DerivedTraits::NumDimensions> leg_info = DefaultLeg<DerivedTra
 - scalar在里面实现
 - contract
 - svd， qr
+- transpose
 
 ## 一些与Eigen相关的问题
 

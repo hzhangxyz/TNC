@@ -99,8 +99,8 @@ EIGEN_DEVICE_FUNC const Eigen::TensorContractionOp<const Eigen::array<Eigen::Ind
                                                    const TensorType1,
                                                    const TensorType2,
                                                    const Eigen::NoOpOutputKernel>
-node_contract(const TensorType1 tensor1,
-              const TensorType2 tensor2,
+node_contract(const TensorType1& tensor1,
+              const TensorType2& tensor2,
               const Eigen::array<Leg, ContractNum>& leg1,
               const Eigen::array<Leg, ContractNum>& leg2,
               std::map<Leg, Leg> map1=std::map<Leg, Leg>{},
@@ -150,10 +150,10 @@ node_contract(const TensorType1 tensor1,
 /* svd */
 // svd返回的是含有U,S,V的一个tuple
 template<typename TensorType, std::size_t SplitNum>
-EIGEN_DEVICE_FUNC const std::tuple<Eigen::Tensor<typename Eigen::internal::traits<TensorType>::Scalar, SplitNum+1>,
-                                   Eigen::Tensor<typename Eigen::internal::traits<TensorType>::Scalar, 1>,
-                                   Eigen::Tensor<typename Eigen::internal::traits<TensorType>::Scalar,
-                                                 Eigen::internal::traits<TensorType>::NumDimensions-SplitNum+1>>
+EIGEN_DEVICE_FUNC std::tuple<Eigen::Tensor<typename Eigen::internal::traits<TensorType>::Scalar, SplitNum+1>,
+                             Eigen::Tensor<typename Eigen::internal::traits<TensorType>::Scalar, 1>,
+                             Eigen::Tensor<typename Eigen::internal::traits<TensorType>::Scalar,
+                                           Eigen::internal::traits<TensorType>::NumDimensions-SplitNum+1>>
 node_svd(const TensorType& tensor,
          const Eigen::array<Leg, SplitNum>& legs,
          Leg new_leg,
@@ -233,13 +233,13 @@ node_svd(const TensorType& tensor,
 // qr外部和svd一样，里面需要处理一下
 // svd返回的是含有U,S,V的一个tuple
 template<typename TensorType, std::size_t SplitNum>
-EIGEN_DEVICE_FUNC const std::tuple<Eigen::Tensor<typename Eigen::internal::traits<TensorType>::Scalar, SplitNum+1>,
-                                   Eigen::Tensor<typename Eigen::internal::traits<TensorType>::Scalar,
-                                                 Eigen::internal::traits<TensorType>::NumDimensions-SplitNum+1>>
+EIGEN_DEVICE_FUNC std::tuple<Eigen::Tensor<typename Eigen::internal::traits<TensorType>::Scalar, SplitNum+1>,
+                             Eigen::Tensor<typename Eigen::internal::traits<TensorType>::Scalar,
+                                           Eigen::internal::traits<TensorType>::NumDimensions-SplitNum+1>>
 node_qr(const TensorType& tensor,
-         const Eigen::array<Leg, SplitNum>& legs,
-         Leg new_leg,
-         bool computeR = true)
+        const Eigen::array<Leg, SplitNum>& legs,
+        Leg new_leg,
+        bool computeR = true)
 {
   // 先各种重命名烦人的东西
   typedef Eigen::internal::traits<TensorType> Traits;
@@ -315,6 +315,33 @@ node_qr(const TensorType& tensor,
   R.leg_info = right_new_leg;
   return std::tuple<Eigen::Tensor<Scalar, LeftRank+1>,
                     Eigen::Tensor<Scalar, RightRank+1>> {Q, R};
+}
+
+/* transpose */
+template <typename TensorType>
+EIGEN_DEVICE_FUNC const Eigen::TensorShufflingOp<
+                  const Eigen::array<
+                  typename Eigen::internal::traits<TensorType>::Index,
+                  Eigen::internal::traits<TensorType>::NumDimensions>,
+                  const TensorType>
+node_transpose(const TensorType& tensor,
+               const Eigen::array<Leg, Eigen::internal::traits<TensorType>::NumDimensions>& new_legs) {
+  // 惯例，alias各种东西
+  typedef Eigen::internal::traits<TensorType> Traits;
+  typedef typename Traits::Index Index;
+  typedef typename Traits::Scalar Scalar;
+  static const std::size_t Rank = Traits::NumDimensions;
+  // 准备转置后的脚
+  Eigen::array<Index, Rank> to_shuffle;
+  for(auto i=0;i<Rank;i++)
+  {
+    // 在原来的leg中一个一个找新的leg
+    to_shuffle[i] = get_index(new_legs[i], tensor.leg_info);
+  }
+  //然后就可以转置并设置新的leg了
+  auto res = tensor.shuffle(to_shuffle);
+  res.leg_info = new_legs;
+  return res;
 }
 
 #undef get_index

@@ -117,11 +117,26 @@ void test_scalar(){
   assert(A(0,0,1,1)*2.0==B(0,0,1,1));
 }
 
+void test_transpose(){
+  Eigen::TensorFixedSize<double, Eigen::Sizes<2,3,4,5>> A;
+  A.setRandom();
+  A.leg_info = {Left, Up, Down, Right};
+  Eigen::Tensor<double, 4> B = node_transpose(A, Eigen::array<Leg, 4>{Right, Up, Left, Down});
+  //debug_tensor(A);
+  //debug_tensor(B);
+  assert(B.dimension(0)==5);
+  assert(B.dimension(1)==3);
+  assert(B.dimension(2)==2);
+  assert(B.dimension(3)==4);
+  assert(A(0,1,2,3)==B(3,1,0,2));
+}
+
 int main(){
   test_copy_and_leg_info();
   test_contract();
   test_svd();
   test_qr();
   test_scalar();
+  test_transpose();
   return 0;
 }
