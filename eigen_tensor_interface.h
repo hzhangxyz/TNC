@@ -8,26 +8,34 @@
 
 /* 初始化Leg，并重载ostream */
 // 定义Leg， 5遍5个脚
-enum Leg {Left,Right,Up,Down,Phy,Left1,Right1,Up1,Down1,Phy1,Left2,Right2,Up2,Down2,Phy2,Left3,Right3,Up3,Down3,Phy3,Left4,Right4,Up4,Down4,Phy4};
+#define CreateLeg(x) Left##x, Right##x, Up##x, Down##x, Phy##x,
+enum Leg {
+  CreateLeg() CreateLeg(1) CreateLeg(2) CreateLeg(3) CreateLeg(4)
+};
+#undef CreateLeg
+
 // ostream重载，使用一个static map来完成
-std::ostream& operator<<(std::ostream& out, const Leg value){
+std::ostream& operator<<(std::ostream& out, const Leg value)
+{
   static std::map<Leg, std::string> strings;
-  if (strings.size() == 0){
-#define IncEnum(p) strings[p] = #p
-// 5x5的macro repeat
-#define IncGroup(x) IncEnum(Left##x);IncEnum(Right##x);IncEnum(Up##x);IncEnum(Down##x);IncEnum(Phy##x);
-IncGroup() IncGroup(1) IncGroup(2) IncGroup(3) IncGroup(4)
-#undef IncGroup
-#undef IncEnum
+  if (strings.size() == 0)
+  {
+    // 5x5的macro repeat
+    #define IncEnum(p) strings[p] = #p
+    #define IncGroup(x) IncEnum(Left##x);IncEnum(Right##x);IncEnum(Up##x);IncEnum(Down##x);IncEnum(Phy##x);
+    IncGroup() IncGroup(1) IncGroup(2) IncGroup(3) IncGroup(4)
+    #undef IncGroup
+    #undef IncEnum
   }
-// 好可以输出了
+  // 好可以输出了
   return out << strings[value];
 }
 
 /* 设置默认Leg */
 // 使用一个Trait来实现，TensorBase内部使用leg_info = DefaultLeg<DerivedTraits::NumDimensions>::value;来调用这里
 template<std::size_t rank>
-struct DefaultLeg{
+struct DefaultLeg
+{
   static const std::array<Leg, rank> value;
 };
 // 如果是4 rank，那大概是哈密顿量，设置一下leg
@@ -57,16 +65,27 @@ OOO
 
 // check Tensor的一个macro
 template<typename TensorType>
-void __debug_tensor(const TensorType& x, const char* name, std::ostream& os){
+void __debug_tensor(const TensorType& x, const char* name, std::ostream& os)
+{
   os << " " << name << "= { rank=" << x.NumDimensions << " dims=[";
-  for(auto i=0;i<x.NumDimensions;i++){
+  for(auto i=0;i<x.NumDimensions;i++)
+  {
     os << "(" << x.dimension(i) << "|" << x.leg_info[i] << "), ";
   }
   os << "], size=" << x.size();
-  if(x.size()<500){os << ", data=\n" << x << " }\n";}
-  else{os << "}";}
+  if(x.size()<500)
+  {
+    os << ", data=\n" << x << " }\n";
+  }else{
+    os << "}";
+  }
 }
 #define debug_tensor(x) __debug_tensor(x, #x, std::clog)
+
+// leg name 是 Leg
+// index的序号是 Index
+// rank 是 std::size_t
+// dimension, size 是 Index
 
 /* contraction */
 //定义三个index用的macro，这样方便，写函数的话vector和map的格式都不一样，这里类型检查看起来也没比宏强多少
@@ -85,15 +104,18 @@ node_contract(const TensorType1 tensor1,
               const Eigen::array<Leg, ContractNum>& leg1,
               const Eigen::array<Leg, ContractNum>& leg2,
               std::map<Leg,Leg> map1=std::map<Leg,Leg>{},
-              std::map<Leg,Leg> map2=std::map<Leg,Leg>{}) {
+              std::map<Leg,Leg> map2=std::map<Leg,Leg>{})
+{
   // 构造给eigen用的缩并脚标对
   typedef Eigen::internal::traits<TensorType1> Traits;
   typedef typename Traits::Index Index;
   Eigen::array<Eigen::IndexPair<Index>, ContractNum> dims;
-  for(auto i=0; i<ContractNum; i++){
+  for(auto i=0; i<ContractNum; i++)
+  {
     dims[i].first = get_index(leg1[i], tensor1.leg_info);
   }
-  for(auto i=0; i<ContractNum; i++){
+  for(auto i=0; i<ContractNum; i++)
+  {
     dims[i].second = get_index(leg2[i], tensor2.leg_info);
   }
   // 然后运行，注意这里的auto返回的是一个op，是lazy的
@@ -101,9 +123,11 @@ node_contract(const TensorType1 tensor1,
   auto i=0;
   // 根据是否在leg内，是否map，来更新result的leg info, 两部分一样，所以写成个宏
   #define check_in_and_map(it, leg, map) {\
-    if(not_found(it, leg)){\
+    if(not_found(it, leg))\
+    {\
       auto l = map.find(it);\
-      if(l==map.end()){\
+      if(l==map.end())\
+      {\
         res.leg_info[i++] = it;\
       }else{\
         res.leg_info[i++] = l->second;\
@@ -111,10 +135,12 @@ node_contract(const TensorType1 tensor1,
     }\
   }
   // 对于两个tensor之前的每个leg， 不在legs里则加入res，但如果还在map里需要先map
-  for(auto j=0;j<tensor1.leg_info.size();j++){
+  for(auto j=0;j<tensor1.leg_info.size();j++)
+  {
     check_in_and_map(tensor1.leg_info[j], leg1, map1);
   }
-  for(auto j=0;j<tensor2.leg_info.size();j++){
+  for(auto j=0;j<tensor2.leg_info.size();j++)
+  {
     check_in_and_map(tensor2.leg_info[j], leg2, map2);
   }
   #undef check_in_and_map
@@ -131,14 +157,15 @@ std::tuple<Eigen::Tensor<typename Eigen::internal::traits<TensorType>::Scalar, S
 node_svd(const TensorType& tensor,
          const Eigen::array<Leg, SplitNum>& legs,
          Leg new_leg,
-         typename Eigen::internal::traits<TensorType>::Index cut=-1) {
+         typename Eigen::internal::traits<TensorType>::Index cut=-1)
+{
   // 先各种重命名烦人的东西
   typedef Eigen::internal::traits<TensorType> Traits;
   typedef typename Traits::Index Index;
   typedef typename Traits::Scalar Scalar;
-  static const int Rank = Traits::NumDimensions;
-  static const int LeftRank = SplitNum;
-  static const int RightRank = Rank - SplitNum;
+  static const std::size_t Rank = Traits::NumDimensions;
+  static const std::size_t LeftRank = SplitNum;
+  static const std::size_t RightRank = Rank - SplitNum;
   typedef Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic> MatrixS;
   // 首先按照leg，分别把整个tensor的legs分左右两边
   Index left_size=1, right_size=1;
@@ -150,24 +177,29 @@ node_svd(const TensorType& tensor,
   Eigen::array<Leg, LeftRank + 1> left_new_leg;
   Eigen::array<Leg, RightRank + 1> right_new_leg;
   // 开始分了, 记录总size, shape和leg
-  for(int i=0;i<Rank;i++){
-    if(not_found(tensor.leg_info[i], legs)){
+  for(auto i=0;i<Rank;i++)
+  {
+    if(not_found(tensor.leg_info[i], legs))
+    {
       // 放右边
       right_size *= tensor.dimension(i);
       right_new_shape[right_index] = tensor.dimension(i);
       right_new_leg[right_index] = tensor.leg_info[i];
-      to_shuffle[SplitNum+right_index++] = i;
+      to_shuffle[SplitNum+right_index] = i;
+      right_index++;
     }else{
       // 放左边
       left_size *= tensor.dimension(i);
       left_new_shape[left_index] = tensor.dimension(i);
       left_new_leg[left_index] = tensor.leg_info[i];
-      to_shuffle[left_index++] = i;
+      to_shuffle[left_index] = i;
+      left_index++;
     }
   }
   // 考虑中间的那个cut
-  Index min_size = left_size<right_size?left_size:right_size;
-  if((cut!=-1)&&(cut<min_size)){
+  auto min_size = left_size<right_size?left_size:right_size;
+  if((cut!=-1)&&(cut<min_size))
+  {
     min_size = cut;
   }
   // 然后把最后一个脚加上去
