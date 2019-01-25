@@ -179,7 +179,8 @@ EIGEN_DEVICE_FUNC std::tuple<
                       Eigen::internal::traits<TensorType>::NumDimensions-SplitNum+1>>
 svd(const TensorType& tensor,
     const Eigen::array<Leg, SplitNum>& legs,
-    Leg new_leg,
+    Leg new_leg1,
+    Leg new_leg2,
     typename Eigen::internal::traits<TensorType>::Index cut=-1)
 {
   // 先各种重命名烦人的东西
@@ -226,7 +227,8 @@ svd(const TensorType& tensor,
     min_size = cut;
   }
   // 然后把最后一个脚加上去
-  left_new_leg[left_index] = right_new_leg[right_index] = new_leg;
+  left_new_leg[left_index] = new_leg1;
+  right_new_leg[right_index] = new_leg2;
   left_new_shape[left_index] = right_new_shape[right_index] = min_size;
   // shuffle并reshape，当作matrix然后就可以svd了
   auto shuffled = tensor.shuffle(to_shuffle);
@@ -245,7 +247,10 @@ svd(const TensorType& tensor,
   copy_data(svd.matrixV(), V);
   #undef copy_data
   U.leg_info = left_new_leg;
-  S.leg_info = Eigen::array<Leg, 1>{new_leg};
+  if(new_leg1==new_leg2)
+  {
+    S.leg_info = Eigen::array<Leg, 1>{new_leg1};
+  }
   V.leg_info = right_new_leg;
   return std::tuple<Eigen::Tensor<Scalar, LeftRank+1>,
                     Eigen::Tensor<Scalar, 1>,
@@ -265,7 +270,8 @@ EIGEN_DEVICE_FUNC std::tuple<
                       Eigen::internal::traits<TensorType>::NumDimensions-SplitNum+1>>
 qr(const TensorType& tensor,
    const Eigen::array<Leg, SplitNum>& legs,
-   Leg new_leg,
+   Leg new_leg1,
+   Leg new_leg2,
    bool computeR = true)
 {
   // 先各种重命名烦人的东西
@@ -308,7 +314,8 @@ qr(const TensorType& tensor,
   // 考虑中间的那个cut
   auto min_size = left_size<right_size?left_size:right_size;
   // 然后把最后一个脚加上去
-  left_new_leg[left_index] = right_new_leg[0] = new_leg;
+  left_new_leg[left_index] = new_leg1;
+  right_new_leg[0] = new_leg2;
   left_new_shape[left_index] = right_new_shape[0] = min_size;
   // shuffle并reshape，当作matrix然后就可以分解了
   auto shuffled = tensor.shuffle(to_shuffle);
@@ -402,6 +409,7 @@ multiple(const TensorType& tensor,
   Eigen::array<Index, Rank> to_reshape; // {1,1,1,1,n,1,1,1,1}
   std::fill(to_reshape.begin(), to_reshape.end(), 1);
   to_reshape[index] = tensor.dimension(index);
+  // reshape 后的bcast方式
   Eigen::array<Index, Rank> to_bcast;
   for(auto i=0; i<Rank; i++)
   {

@@ -44,7 +44,7 @@ void test_svd(){
   Eigen::TensorFixedSize<float, Eigen::Sizes<2,3,4,5>> A;
   A.setRandom();
   A.leg_info = {Left, Up, Down, Right};
-  auto svd = Node::svd(A, Eigen::array<Leg, 2>{Up, Down}, Phy);
+  auto svd = Node::svd(A, Eigen::array<Leg, 2>{Up, Down}, Phy, Phy);
   //debug_tensor(A);
   //debug_tensor(std::get<0>(svd));
   //debug_tensor(std::get<1>(svd));
@@ -60,7 +60,7 @@ void test_svd(){
   }
   assert(abs(tmp-A(1,1,3,2))<1e-5);
   int cut = 8;
-  auto svd_cut = Node::svd(A, Eigen::array<Leg, 2>{Up, Down}, Phy, cut);
+  auto svd_cut = Node::svd(A, Eigen::array<Leg, 2>{Up, Down}, Phy, Phy, cut);
   tmp = 0;
   for(int i=0;i<cut;i++){
     tmp += std::get<0>(svd)(1,3,i) * std::get<1>(svd)(i) * std::get<2>(svd)(1,2,i);
@@ -77,7 +77,7 @@ void test_qr(){
   Eigen::TensorFixedSize<double, Eigen::Sizes<2,3,4,5>> A;
   A.setRandom();
   A.leg_info = {Left, Up, Down, Right};
-  auto qr = Node::qr(A, Eigen::array<Leg, 2>{Up, Down}, Phy);
+  auto qr = Node::qr(A, Eigen::array<Leg, 2>{Up, Down}, Phy, Phy);
   //debug_tensor(A);
   //debug_tensor(std::get<0>(qr));
   //debug_tensor(std::get<1>(qr));
@@ -95,11 +95,11 @@ void test_qr(){
   Eigen::TensorFixedSize<double, Eigen::Sizes<2,3,4,5>> B;
   B.setRandom();
   B.leg_info = {Left, Up, Down, Right};
-  auto qr2 = Node::qr(B, Eigen::array<Leg, 2>{Left, Right}, Phy, false);
+  auto qr2 = Node::qr(B, Eigen::array<Leg, 2>{Left, Right}, Phy, Phy, false);
   //debug_tensor(B);
   //debug_tensor(std::get<0>(qr2));
   //debug_tensor(std::get<1>(qr2));
-  auto qr3 = Node::qr(B, Eigen::array<Leg, 2>{Left, Right}, Phy);
+  auto qr3 = Node::qr(B, Eigen::array<Leg, 2>{Left, Right}, Phy, Phy);
   //debug_tensor(std::get<0>(qr3));
   //debug_tensor(std::get<1>(qr3));
   assert(std::get<0>(qr2)(1,1,1)=std::get<0>(qr3)(1,1,1));

@@ -6,6 +6,6 @@ object = main mps_heisenburg
 default: main
 
 $(object): %: %.cpp
-	echo Compiling %
+	echo Compiling $@
 	$(CXX) $(CXXFLAGS) $< -o $@.out
-	echo Compiled %
+	echo Compiled $@
