@@ -1,3 +1,2 @@
-eigen3
 .vscode
-a.out
+*.out

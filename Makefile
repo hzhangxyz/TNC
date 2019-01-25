@@ -1,12 +1,11 @@
-CXXFLAGS= -I./eigen-git-mirror -I./eigen-git-mirror/unsupported -g -lblas -llapacke
-gcc:
-	g++ main.cpp $(CXXFLAGS)
-	./a.out
+CXX=clang++
+CXXFLAGS+= -I./eigen-git-mirror -I./eigen-git-mirror/unsupported -g -lblas -llapacke
 
-icc:
-	icc main.cpp $(CXXFLAGS)
-	./a.out
+object = main mps_heisenburg
 
-clang:
-	clang++ main.cpp $(CXXFLAGS)
-	./a.out
+default: main
+
+$(object): %: %.cpp
+	echo Compiling %
+	$(CXX) $(CXXFLAGS) $< -o $@.out
+	echo Compiled %
