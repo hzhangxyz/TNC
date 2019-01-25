@@ -41,9 +41,23 @@ struct MPS
     {
         for(int i=L-1;i>1;i--)
         {
-            auto qr = Node::qr(lattice[i], std::array<Leg,2>{Phy, Right}, Left, Right);
+            debug_tensor(lattice[i]);
+            auto qr = Node::qr(lattice[i], Eigen::array<Leg,2>{Phy, Right}, Left, Right);
             lattice[i] = std::get<0>(qr);
-            lattice[i-1] = Node::contract(lattice[i-1], qr, std::array<Leg,1>{Right}, {Left});
+            debug_tensor(lattice[i]);
+            Eigen::Tensor<Base, 2> rr = std::get<1>(qr);
+            debug_tensor(rr);
+            auto tmp = Node::contract(lattice[i-1], rr, Eigen::array<Leg,1>{Right}, {Left});
+            for(auto i : tmp.leg_info){
+                std::cout << i << " ";
+            }std::cout << "\n";
+            auto tmp2 = lattice[i-1].contract(rr, Eigen::array<Eigen::IndexPair<int>,1>{Eigen::IndexPair<int>{0,1}});
+            for(auto i : tmp2.leg_info){
+                std::cout << i << " ";
+            }std::cout << "\n";
+            //Eigen::Tensor<Base, 3> tt = tmp;
+            //debug_tensor(tmp);
+            break;
         }
     }
     void update()
@@ -57,9 +71,9 @@ struct MPS
 int main()
 {
     MPS<4, 4> mps;
-    debug_tensor(mps.lattice[5]);
+    //debug_tensor(mps.lattice[5]);
     mps.pre();
-    debug_tensor(mps.lattice[5]);
+    //debug_tensor(mps.lattice[5]);
     return 0;
 }
   
