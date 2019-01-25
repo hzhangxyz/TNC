@@ -118,10 +118,10 @@ void test_scalar(){
 }
 
 void test_transpose(){
-  Eigen::TensorFixedSize<double, Eigen::Sizes<2,3,4,5>> A;
+  Eigen::TensorFixedSize<int, Eigen::Sizes<2,3,4,5>> A;
   A.setRandom();
   A.leg_info = {Left, Up, Down, Right};
-  Eigen::Tensor<double, 4> B = node_transpose(A, Eigen::array<Leg, 4>{Right, Up, Left, Down});
+  Eigen::Tensor<int, 4> B = node_transpose(A, Eigen::array<Leg, 4>{Right, Up, Left, Down});
   //debug_tensor(A);
   //debug_tensor(B);
   assert(B.dimension(0)==5);
@@ -132,10 +132,10 @@ void test_transpose(){
 }
 
 void test_multiple(){
-  Eigen::TensorFixedSize<int, Eigen::Sizes<2,3,4,5>> A;
+  Eigen::TensorFixedSize<float, Eigen::Sizes<2,3,4,5>> A;
   A.setRandom();
   A.leg_info = {Left, Up, Down, Right};
-  Eigen::TensorFixedSize<int, Eigen::Sizes<4>> B;
+  Eigen::TensorFixedSize<float, Eigen::Sizes<4>> B;
   B.setValues({1, 2, 3, 4});
   decltype(A) C = node_multiple(A, B, Down);
   assert(A(1,2,3,4)*4==C(1,2,3,4));

@@ -8,11 +8,16 @@
 
 /* 初始化Leg，并重载ostream */
 // 定义Leg， 5遍5个脚
-#define CreateLeg(x) Left##x, Right##x, Up##x, Down##x, Phy##x,
-enum Leg {
-  CreateLeg() CreateLeg(1) CreateLeg(2) CreateLeg(3) CreateLeg(4)
+enum Leg
+{
+  #define CreateLeg(x) Left##x, Right##x, Up##x, Down##x, Phy##x
+  CreateLeg(),
+  CreateLeg(1),
+  CreateLeg(2),
+  CreateLeg(3),
+  CreateLeg(4)
+  #undef CreateLeg
 };
-#undef CreateLeg
 
 // ostream重载，使用一个static map来完成
 std::ostream& operator<<(std::ostream& out, const Leg value)
@@ -22,8 +27,12 @@ std::ostream& operator<<(std::ostream& out, const Leg value)
   {
     // 5x5的macro repeat
     #define IncEnum(p) strings[p] = #p
-    #define IncGroup(x) IncEnum(Left##x);IncEnum(Right##x);IncEnum(Up##x);IncEnum(Down##x);IncEnum(Phy##x);
-    IncGroup() IncGroup(1) IncGroup(2) IncGroup(3) IncGroup(4)
+    #define IncGroup(x) IncEnum(Left##x); IncEnum(Right##x); IncEnum(Up##x); IncEnum(Down##x); IncEnum(Phy##x)
+    IncGroup();
+    IncGroup(1);
+    IncGroup(2);
+    IncGroup(3);
+    IncGroup(4);
     #undef IncGroup
     #undef IncEnum
   }
@@ -37,6 +46,7 @@ template<std::size_t rank>
 struct DefaultLeg
 {
   static const std::array<Leg, rank> value;
+  //static const Leg value[rank];
 };
 // 如果是4 rank，那大概是哈密顿量，设置一下leg
 template <>
@@ -53,8 +63,7 @@ OOO
 3 4
 */
 
-/* 使用plugin并载入Eigen，注意Eigen内部实际上也是做了一些变化的 */
-#define EIGEN_TENSOR_PLUGIN "eigen_tensor_plugin.h"
+/* 设置好Leg那些东西后,载入Eigen，注意Eigen内部实际上也是做了一些变化的 */
 // 可能需要mkl blas那些东西
 //#define EIGEN_USE_MKL_ALL
 //#define EIGEN_USE_MKL_VML
@@ -95,16 +104,20 @@ void __debug_tensor(const TensorType& x, const char* name, std::ostream& os)
 
 // 好，这是contract，第一个参数是缩并脚标的类型，index类型使用了第一个tensor的trait
 template<typename TensorType1, typename TensorType2, std::size_t ContractNum>
-EIGEN_DEVICE_FUNC const Eigen::TensorContractionOp<const Eigen::array<Eigen::IndexPair<typename Eigen::internal::traits<TensorType1>::Index>, ContractNum>,
-                                                   const TensorType1,
-                                                   const TensorType2,
-                                                   const Eigen::NoOpOutputKernel>
+EIGEN_DEVICE_FUNC const Eigen::TensorContractionOp<
+                    const Eigen::array<
+                      Eigen::IndexPair<
+                        typename Eigen::internal::traits<TensorType1>::Index>,
+                      ContractNum>,
+                    const TensorType1,
+                    const TensorType2,
+                    const Eigen::NoOpOutputKernel>
 node_contract(const TensorType1& tensor1,
               const TensorType2& tensor2,
               const Eigen::array<Leg, ContractNum>& leg1,
               const Eigen::array<Leg, ContractNum>& leg2,
-              std::map<Leg, Leg> map1=std::map<Leg, Leg>{},
-              std::map<Leg, Leg> map2=std::map<Leg, Leg>{})
+              std::map<Leg, Leg> map1={},
+              std::map<Leg, Leg> map2={})
 {
   // 构造给eigen用的缩并脚标对
   typedef Eigen::internal::traits<TensorType1> Traits;
@@ -120,6 +133,7 @@ node_contract(const TensorType1& tensor1,
   }
   // 然后运行，注意这里的auto返回的是一个op，是lazy的
   auto res = tensor1.contract(tensor2, dims);
+  // 创建新的tensor的leg
   auto i=0;
   // 根据是否在leg内，是否map，来更新result的leg info, 两部分一样，所以写成个宏
   #define check_in_and_map(it, leg, map) {\
@@ -150,10 +164,14 @@ node_contract(const TensorType1& tensor1,
 /* svd */
 // svd返回的是含有U,S,V的一个tuple
 template<typename TensorType, std::size_t SplitNum>
-EIGEN_DEVICE_FUNC std::tuple<Eigen::Tensor<typename Eigen::internal::traits<TensorType>::Scalar, SplitNum+1>,
-                             Eigen::Tensor<typename Eigen::internal::traits<TensorType>::Scalar, 1>,
-                             Eigen::Tensor<typename Eigen::internal::traits<TensorType>::Scalar,
-                                           Eigen::internal::traits<TensorType>::NumDimensions-SplitNum+1>>
+EIGEN_DEVICE_FUNC std::tuple<
+                    Eigen::Tensor<
+                      typename Eigen::internal::traits<TensorType>::Scalar,
+                      SplitNum+1>,
+                    Eigen::Tensor<typename Eigen::internal::traits<TensorType>::Scalar, 1>,
+                    Eigen::Tensor<
+                      typename Eigen::internal::traits<TensorType>::Scalar,
+                      Eigen::internal::traits<TensorType>::NumDimensions-SplitNum+1>>
 node_svd(const TensorType& tensor,
          const Eigen::array<Leg, SplitNum>& legs,
          Leg new_leg,
@@ -233,9 +251,13 @@ node_svd(const TensorType& tensor,
 // qr外部和svd一样，里面需要处理一下
 // http://www.netlib.org/lapack/explore-html/df/dc5/group__variants_g_ecomputational_ga3766ea903391b5cf9008132f7440ec7b.html
 template<typename TensorType, std::size_t SplitNum>
-EIGEN_DEVICE_FUNC std::tuple<Eigen::Tensor<typename Eigen::internal::traits<TensorType>::Scalar, SplitNum+1>,
-                             Eigen::Tensor<typename Eigen::internal::traits<TensorType>::Scalar,
-                                           Eigen::internal::traits<TensorType>::NumDimensions-SplitNum+1>>
+EIGEN_DEVICE_FUNC std::tuple<
+                    Eigen::Tensor<
+                      typename Eigen::internal::traits<TensorType>::Scalar,
+                      SplitNum+1>,
+                    Eigen::Tensor<
+                      typename Eigen::internal::traits<TensorType>::Scalar,
+                      Eigen::internal::traits<TensorType>::NumDimensions-SplitNum+1>>
 node_qr(const TensorType& tensor,
         const Eigen::array<Leg, SplitNum>& legs,
         Leg new_leg,
@@ -307,7 +329,6 @@ node_qr(const TensorType& tensor,
       auto fill_num = (min_size<(j+1))?min_size:(j+1);
       std::copy(&matrixQR(0, j), &matrixQR(0, j)+fill_num, &matrixR(0,j));
       std::fill(&matrixR(0, j)+fill_num, &matrixR(0, j)+min_size, 0);
-
     }
   }
   // leg处理一下
@@ -320,10 +341,10 @@ node_qr(const TensorType& tensor,
 /* transpose */
 template <typename TensorType>
 EIGEN_DEVICE_FUNC const Eigen::TensorShufflingOp<
-                  const Eigen::array<
-                  typename Eigen::internal::traits<TensorType>::Index,
-                  Eigen::internal::traits<TensorType>::NumDimensions>,
-                  const TensorType>
+                    const Eigen::array<
+                      typename Eigen::internal::traits<TensorType>::Index,
+                      Eigen::internal::traits<TensorType>::NumDimensions>,
+                    const TensorType>
 node_transpose(const TensorType& tensor,
                const Eigen::array<Leg, Eigen::internal::traits<TensorType>::NumDimensions>& new_legs)
 {
@@ -348,7 +369,21 @@ node_transpose(const TensorType& tensor,
 /* multiple */
 // https://stackoverflow.com/questions/47040173/how-to-multiple-two-eigen-tensors-along-batch-dimension
 template <typename TensorType>
-EIGEN_DEVICE_FUNC const TensorType
+EIGEN_DEVICE_FUNC const Eigen::TensorCwiseBinaryOp<
+                    Eigen::internal::scalar_product_op<
+                      typename Eigen::internal::traits<TensorType>::Scalar>,
+                    const TensorType,
+                    const Eigen::TensorBroadcastingOp<
+                      const Eigen::array<
+                        typename Eigen::internal::traits<TensorType>::Index,
+                        Eigen::internal::traits<TensorType>::NumDimensions>,
+                      const Eigen::TensorReshapingOp<
+                        const Eigen::array<
+                          typename Eigen::internal::traits<TensorType>::Index,
+                          Eigen::internal::traits<TensorType>::NumDimensions>,
+                        const Eigen::Tensor<
+                          typename Eigen::internal::traits<TensorType>::Scalar,
+                          1>>>>
 node_multiple(const TensorType& tensor,
               const Eigen::Tensor<typename Eigen::internal::traits<TensorType>::Scalar, 1>& vector,
               Leg leg)

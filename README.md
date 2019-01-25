@@ -27,3 +27,4 @@ Eigen::array<Leg, DerivedTraits::NumDimensions> leg_info = DefaultLeg<DerivedTra
 
 ## SVD，QR选择的问题
 - (D=10)×2×2=40大概是svd的量级，是16的两倍多，所以就用BDCSVD吧
+- svd的时候,如何转置最快?(这里贪心策略吧)
