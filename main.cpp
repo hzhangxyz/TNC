@@ -32,7 +32,7 @@ void test_contract(){
   B.setRandom();
   A.leg_info = {Left1, Right1, Phy1};
   B.leg_info = {Left2, Right2, Phy2};
-  Eigen::Tensor<double, 4> AB = node_contract(A, B, Eigen::array<Leg,1>{Right1}, {Left2}, {{Phy1, Phy3}}, {{Phy2, Phy4}});
+  Eigen::Tensor<double, 4> AB = Node::contract(A, B, Eigen::array<Leg,1>{Right1}, {Left2}, {{Phy1, Phy3}}, {{Phy2, Phy4}});
   assert(AB.leg_info[0]==Left1);
   assert(AB.leg_info[1]==Phy3);
   assert(AB.leg_info[2]==Right2);
@@ -44,7 +44,7 @@ void test_svd(){
   Eigen::TensorFixedSize<float, Eigen::Sizes<2,3,4,5>> A;
   A.setRandom();
   A.leg_info = {Left, Up, Down, Right};
-  auto svd = node_svd(A, Eigen::array<Leg, 2>{Up, Down}, Phy);
+  auto svd = Node::svd(A, Eigen::array<Leg, 2>{Up, Down}, Phy);
   //debug_tensor(A);
   //debug_tensor(std::get<0>(svd));
   //debug_tensor(std::get<1>(svd));
@@ -60,7 +60,7 @@ void test_svd(){
   }
   assert(abs(tmp-A(1,1,3,2))<1e-5);
   int cut = 8;
-  auto svd_cut = node_svd(A, Eigen::array<Leg, 2>{Up, Down}, Phy, cut);
+  auto svd_cut = Node::svd(A, Eigen::array<Leg, 2>{Up, Down}, Phy, cut);
   tmp = 0;
   for(int i=0;i<cut;i++){
     tmp += std::get<0>(svd)(1,3,i) * std::get<1>(svd)(i) * std::get<2>(svd)(1,2,i);
@@ -77,7 +77,7 @@ void test_qr(){
   Eigen::TensorFixedSize<double, Eigen::Sizes<2,3,4,5>> A;
   A.setRandom();
   A.leg_info = {Left, Up, Down, Right};
-  auto qr = node_qr(A, Eigen::array<Leg, 2>{Up, Down}, Phy);
+  auto qr = Node::qr(A, Eigen::array<Leg, 2>{Up, Down}, Phy);
   //debug_tensor(A);
   //debug_tensor(std::get<0>(qr));
   //debug_tensor(std::get<1>(qr));
@@ -95,11 +95,11 @@ void test_qr(){
   Eigen::TensorFixedSize<double, Eigen::Sizes<2,3,4,5>> B;
   B.setRandom();
   B.leg_info = {Left, Up, Down, Right};
-  auto qr2 = node_qr(B, Eigen::array<Leg, 2>{Left, Right}, Phy, false);
+  auto qr2 = Node::qr(B, Eigen::array<Leg, 2>{Left, Right}, Phy, false);
   //debug_tensor(B);
   //debug_tensor(std::get<0>(qr2));
   //debug_tensor(std::get<1>(qr2));
-  auto qr3 = node_qr(B, Eigen::array<Leg, 2>{Left, Right}, Phy);
+  auto qr3 = Node::qr(B, Eigen::array<Leg, 2>{Left, Right}, Phy);
   //debug_tensor(std::get<0>(qr3));
   //debug_tensor(std::get<1>(qr3));
   assert(std::get<0>(qr2)(1,1,1)=std::get<0>(qr3)(1,1,1));
@@ -121,7 +121,7 @@ void test_transpose(){
   Eigen::TensorFixedSize<int, Eigen::Sizes<2,3,4,5>> A;
   A.setRandom();
   A.leg_info = {Left, Up, Down, Right};
-  Eigen::Tensor<int, 4> B = node_transpose(A, Eigen::array<Leg, 4>{Right, Up, Left, Down});
+  Eigen::Tensor<int, 4> B = Node::transpose(A, Eigen::array<Leg, 4>{Right, Up, Left, Down});
   //debug_tensor(A);
   //debug_tensor(B);
   assert(B.dimension(0)==5);
@@ -137,11 +137,15 @@ void test_multiple(){
   A.leg_info = {Left, Up, Down, Right};
   Eigen::TensorFixedSize<float, Eigen::Sizes<4>> B;
   B.setValues({1, 2, 3, 4});
-  decltype(A) C = node_multiple(A, B, Down);
+  decltype(A) C = Node::multiple(A, B, Down);
   assert(A(1,2,3,4)*4==C(1,2,3,4));
   assert(A(1,0,3,2)*4==C(1,0,3,2));
   assert(A(1,0,2,2)*3==C(1,0,2,2));
   assert(A(1,1,0,2)==C(1,1,0,2));
+  assert(A.leg_info[0]==C.leg_info[0]);
+  assert(A.leg_info[1]==C.leg_info[1]);
+  assert(A.leg_info[2]==C.leg_info[2]);
+  assert(A.leg_info[3]==C.leg_info[3]);
 }
 
 int main(){

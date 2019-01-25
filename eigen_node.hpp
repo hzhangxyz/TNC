@@ -6,9 +6,11 @@
 #include <map>
 #include <string>
 
+namespace Node
+{
 /* 初始化Leg，并重载ostream */
 // 定义Leg， 5遍5个脚
-enum Leg
+enum class Leg
 {
   #define CreateLeg(x) Left##x, Right##x, Up##x, Down##x, Phy##x
   CreateLeg(),
@@ -26,7 +28,7 @@ std::ostream& operator<<(std::ostream& out, const Leg value)
   if (strings.size() == 0)
   {
     // 5x5的macro repeat
-    #define IncEnum(p) strings[p] = #p
+    #define IncEnum(p) strings[Leg::p] = #p
     #define IncGroup(x) IncEnum(Left##x); IncEnum(Right##x); IncEnum(Up##x); IncEnum(Down##x); IncEnum(Phy##x)
     IncGroup();
     IncGroup(1);
@@ -50,7 +52,7 @@ struct DefaultLeg
 };
 // 如果是4 rank，那大概是哈密顿量，设置一下leg
 template <>
-const std::array<Leg, 4> DefaultLeg<4>::value = {Phy1, Phy2, Phy3, Phy4};
+const std::array<Leg, 4> DefaultLeg<4>::value = {Leg::Phy1, Leg::Phy2, Leg::Phy3, Leg::Phy4};
 // 不然的话那就算了
 template <std::size_t other>
 const std::array<Leg, other> DefaultLeg<other>::value = {};
@@ -62,6 +64,7 @@ OOO
 | |
 3 4
 */
+} // namespace Node
 
 /* 设置好Leg那些东西后,载入Eigen，注意Eigen内部实际上也是做了一些变化的 */
 // 可能需要mkl blas那些东西
@@ -72,6 +75,8 @@ OOO
 #include <Eigen/Dense>
 #include <Eigen/CXX11/Tensor>
 
+namespace Node
+{
 // check Tensor的一个macro
 template<typename TensorType>
 void __debug_tensor(const TensorType& x, const char* name, std::ostream& os)
@@ -89,7 +94,7 @@ void __debug_tensor(const TensorType& x, const char* name, std::ostream& os)
     os << "}";
   }
 }
-#define debug_tensor(x) __debug_tensor(x, #x, std::clog)
+#define debug_tensor(x) Node::__debug_tensor(x, #x, std::clog)
 
 // leg name 是 Leg
 // index的序号是 Index
@@ -112,12 +117,12 @@ EIGEN_DEVICE_FUNC const Eigen::TensorContractionOp<
                     const TensorType1,
                     const TensorType2,
                     const Eigen::NoOpOutputKernel>
-node_contract(const TensorType1& tensor1,
-              const TensorType2& tensor2,
-              const Eigen::array<Leg, ContractNum>& leg1,
-              const Eigen::array<Leg, ContractNum>& leg2,
-              std::map<Leg, Leg> map1={},
-              std::map<Leg, Leg> map2={})
+contract(const TensorType1& tensor1,
+         const TensorType2& tensor2,
+         const Eigen::array<Leg, ContractNum>& leg1,
+         const Eigen::array<Leg, ContractNum>& leg2,
+         std::map<Leg, Leg> map1={},
+         std::map<Leg, Leg> map2={})
 {
   // 构造给eigen用的缩并脚标对
   typedef Eigen::internal::traits<TensorType1> Traits;
@@ -172,10 +177,10 @@ EIGEN_DEVICE_FUNC std::tuple<
                     Eigen::Tensor<
                       typename Eigen::internal::traits<TensorType>::Scalar,
                       Eigen::internal::traits<TensorType>::NumDimensions-SplitNum+1>>
-node_svd(const TensorType& tensor,
-         const Eigen::array<Leg, SplitNum>& legs,
-         Leg new_leg,
-         typename Eigen::internal::traits<TensorType>::Index cut=-1)
+svd(const TensorType& tensor,
+    const Eigen::array<Leg, SplitNum>& legs,
+    Leg new_leg,
+    typename Eigen::internal::traits<TensorType>::Index cut=-1)
 {
   // 先各种重命名烦人的东西
   typedef Eigen::internal::traits<TensorType> Traits;
@@ -258,10 +263,10 @@ EIGEN_DEVICE_FUNC std::tuple<
                     Eigen::Tensor<
                       typename Eigen::internal::traits<TensorType>::Scalar,
                       Eigen::internal::traits<TensorType>::NumDimensions-SplitNum+1>>
-node_qr(const TensorType& tensor,
-        const Eigen::array<Leg, SplitNum>& legs,
-        Leg new_leg,
-        bool computeR = true)
+qr(const TensorType& tensor,
+   const Eigen::array<Leg, SplitNum>& legs,
+   Leg new_leg,
+   bool computeR = true)
 {
   // 先各种重命名烦人的东西
   typedef Eigen::internal::traits<TensorType> Traits;
@@ -345,8 +350,8 @@ EIGEN_DEVICE_FUNC const Eigen::TensorShufflingOp<
                       typename Eigen::internal::traits<TensorType>::Index,
                       Eigen::internal::traits<TensorType>::NumDimensions>,
                     const TensorType>
-node_transpose(const TensorType& tensor,
-               const Eigen::array<Leg, Eigen::internal::traits<TensorType>::NumDimensions>& new_legs)
+transpose(const TensorType& tensor,
+          const Eigen::array<Leg, Eigen::internal::traits<TensorType>::NumDimensions>& new_legs)
 {
   // 惯例，alias各种东西
   typedef Eigen::internal::traits<TensorType> Traits;
@@ -384,9 +389,9 @@ EIGEN_DEVICE_FUNC const Eigen::TensorCwiseBinaryOp<
                         const Eigen::Tensor<
                           typename Eigen::internal::traits<TensorType>::Scalar,
                           1>>>>
-node_multiple(const TensorType& tensor,
-              const Eigen::Tensor<typename Eigen::internal::traits<TensorType>::Scalar, 1>& vector,
-              Leg leg)
+multiple(const TensorType& tensor,
+         const Eigen::Tensor<typename Eigen::internal::traits<TensorType>::Scalar, 1>& vector,
+         Leg leg)
 {
   typedef Eigen::internal::traits<TensorType> Traits;
   typedef typename Traits::Index Index;
@@ -406,9 +411,27 @@ node_multiple(const TensorType& tensor,
   return tensor * vector.reshape(to_reshape).broadcast(to_bcast);
 }
 
-
 #undef get_index
 #undef not_found
 #undef find_in
+} // namespace Node
+
+#define DefineLeg(x) static Node::Leg x = Node::Leg::x
+#define DefineLegs(n) DefineLeg(Left##n); DefineLeg(Right##n); DefineLeg(Up##n); DefineLeg(Down##n); DefineLeg(Phy##n)
+DefineLegs();
+DefineLegs(1);
+DefineLegs(2);
+DefineLegs(3);
+DefineLegs(4);
+#undef DefineLegs
+#undef DefineLeg
+
+using Leg = Node::Leg;
+
+// what export:
+// include Eigen
+// include Node
+// macro debug_tensor
+// Leg as using and its var as static var
 
 #endif
