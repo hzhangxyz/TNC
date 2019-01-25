@@ -430,7 +430,7 @@ using Leg = Node::Leg;
 
 // what export:
 // include Eigen
-// include Node
+// include Node(Leg, DefaultLeg, 几个运算用的函数, __debug_tensor)
 // macro debug_tensor
 // Leg as using and its var as static var
 
