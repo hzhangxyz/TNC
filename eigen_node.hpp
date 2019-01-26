@@ -362,7 +362,9 @@ template <typename TensorType>
                       typename Eigen::internal::traits<TensorType>::Index,
                       Eigen::internal::traits<TensorType>::NumDimensions>,
                     const TensorType>*/
-EIGEN_DEVICE_FUNC TensorType
+EIGEN_DEVICE_FUNC Eigen::Tensor<
+                    typename TensorType::Scalar,
+                    TensorType::NumDimensions>
 transpose(const TensorType& tensor,
           const Eigen::array<Leg, TensorType::NumDimensions>& new_legs)
 {
@@ -402,7 +404,9 @@ template <typename TensorType>
                         const Eigen::Tensor<
                           typename Eigen::internal::traits<TensorType>::Scalar,
                           1>>>>*/
-EIGEN_DEVICE_FUNC TensorType
+EIGEN_DEVICE_FUNC Eigen::Tensor<
+                    typename TensorType::Scalar,
+                    TensorType::NumDimensions>
 multiple(const TensorType& tensor,
          const Eigen::Tensor<typename TensorType::Scalar, 1>& vector,
          Leg leg)
