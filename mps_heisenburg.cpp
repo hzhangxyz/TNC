@@ -76,7 +76,7 @@ struct MPS
                                  Eigen::array<Leg, 2>{Right, Phy3}, Left, Right, D);
             lattice[i] = std::get<0>(svd);
             lattice[i].leg_rename({{Phy3,Phy}});
-            lattice[i-1] = Node::multiple(std::get<2>(svd), std::get<1>(svd), Left);
+            lattice[i-1] = Node::multiple(std::get<2>(svd), std::get<1>(svd), Right);
             lattice[i-1].leg_rename({{Phy4,Phy}});
         }
         for(int i=0;i<L;i++)
@@ -85,15 +85,31 @@ struct MPS
             lattice[i] = lattice[i]/norm();
         }
     }
+    void update(int n)
+    {
+        pre();
+        for(int i=0;i<n;i++)
+        {
+            update();
+        }
+    }
+    Base norm()
+    {
+        Eigen::Tensor<Base, 4> n = Node::contract(
+            lattice[0], lattice[0],
+            {Phy}, {Phy},
+            {{Left, Left1}, {Right, Right1}},
+            {{Left, Left2}, {Right, Right2}}
+        );
+        //for(int i=0)
+    }
 };
 
 int main()
 {
     MPS<4, 10> mps{};
+    mps.update(100);
     debug_tensor(mps.lattice[5]);
-    mps.pre();
-    debug_tensor(mps.lattice[5]);
-    mps.update();
     return 0;
 }
   

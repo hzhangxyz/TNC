@@ -434,6 +434,15 @@ multiple(const TensorType& tensor,
 #undef get_index
 #undef not_found
 #undef find_in
+
+template<typename Base>
+Eigen::Tensor<Base, 0> ITensor()
+{
+  Eigen::Tensor<Base, 0> res;
+  res.setValues(Base(1));
+  return res;
+}
+
 } // namespace Node
 
 #define DefineLeg(x) static Node::Leg x = Node::Leg::x
