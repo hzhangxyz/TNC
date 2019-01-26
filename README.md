@@ -29,6 +29,4 @@ Eigen::array<Leg, DerivedTraits::NumDimensions> leg_info = DefaultLeg<DerivedTra
 - (D=10)×2×2=40大概是svd的量级，是16的两倍多，所以就用BDCSVD吧
 - svd的时候,如何转置最快?(这里贪心策略吧)
 
-也许eigen patch那部分用宏扩起来比较好
-
-contraction好像有问题...
+很多地方要加多余的 Eigen::array<Leg,2> 的问题,很烦

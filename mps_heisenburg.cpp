@@ -16,8 +16,10 @@ struct MPS
 
     std::array<Eigen::Tensor<Base, 3>, L> lattice;
     //std::array<Eigen::Tensor<Base, 1>, L-1> env;
+
     MPS()
     {
+        std::cout << "Created a MPS\n";
         Hamiltonian = Hamiltonian/Base(4);
         for(int i=1;i<L-1;i++)
         {
@@ -29,6 +31,7 @@ struct MPS
         {
             lattice[i] = lattice[i].random()*Base(2) - Base(1);
             lattice[i].leg_info = {Left, Right, Phy};
+            //debug_tensor(lattice[i]);
         }
         /*for(int i=0;i<L-1;i++)
         {
@@ -41,19 +44,9 @@ struct MPS
     {
         for(int i=L-1;i>1;i--)
         {
-            debug_tensor(lattice[i]);
             auto qr = Node::qr(lattice[i], Eigen::array<Leg,2>{Phy, Right}, Left, Right);
             lattice[i] = std::get<0>(qr);
-            debug_tensor(lattice[i]);
-            Eigen::Tensor<Base, 2> rr = std::get<1>(qr);
-            debug_tensor(rr);
-            auto tmp = Node::contract(lattice[i-1], rr, Eigen::array<Leg,1>{Right}, {Left});
-            for(auto i : tmp.leg_info){
-                std::cout << i << " ";  
-            }
-            //Eigen::Tensor<Base, 3> tt = tmp;
-            //debug_tensor(tmp);
-            break;
+            lattice[i-1] = Node::contract(lattice[i-1], std::get<1>(qr), Eigen::array<Leg,1>{Right}, {Left});
         }
     }
     void update()
@@ -66,10 +59,10 @@ struct MPS
 
 int main()
 {
-    MPS<4, 4> mps;
-    //debug_tensor(mps.lattice[5]);
+    MPS<4, 10> mps{};
+    debug_tensor(mps.lattice[5]);
     mps.pre();
-    //debug_tensor(mps.lattice[5]);
+    debug_tensor(mps.lattice[5]);
     return 0;
 }
   
