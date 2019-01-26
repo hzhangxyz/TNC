@@ -5,7 +5,7 @@
 void test_copy_and_leg_info(){
   // Tensor
   Eigen::Tensor<float, 4> T1;
-  assert(T1.leg_info[1]=Phy2);
+  assert(T1.leg_info[1]==Phy2);
   Eigen::Tensor<int, 3> T2(2, 3, 4);
   T2.leg_info = {Left1, Left2, Left3};
   Eigen::Tensor<int, 3> T3 = T2;

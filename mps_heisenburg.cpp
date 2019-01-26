@@ -46,10 +46,10 @@ struct MPS
         {
             auto qr = Node::qr(lattice[i], Eigen::array<Leg,2>{Phy, Right}, Left, Right);
             lattice[i] = std::get<0>(qr);
-            lattice[i-1] = (Node::contract(lattice[i-1], std::get<1>(qr), Eigen::array<Leg,1>{Right}, {Left}));
+            lattice[i-1] = Node::contract(lattice[i-1], std::get<1>(qr), Eigen::array<Leg,1>{Right}, {Left});
         }
     }
-    /*void update()
+    void update()
     {
         for(int i=0;i<L-1;i++){
             auto big = Node::contract(lattice[i], lattice[i+1],
@@ -62,7 +62,7 @@ struct MPS
             lattice[i] = std::get<0>(svd);
             lattice[i+1] = Node::multiple(std::get<2>(svd), std::get<1>(svd), Left);
         }
-    }*/
+    }
 };
 
 int main()
@@ -71,7 +71,7 @@ int main()
     debug_tensor(mps.lattice[5]);
     mps.pre();
     debug_tensor(mps.lattice[5]);
-    //mps.update();
+    mps.update();
     return 0;
 }
   
