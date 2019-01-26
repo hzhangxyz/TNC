@@ -51,7 +51,8 @@ struct MPS
     }
     void update()
     {
-        for(int i=0;i<L-1;i++){
+        for(int i=0;i<L-1;i++)
+        {
             auto big = Node::contract(lattice[i], lattice[i+1],
                                       Eigen::array<Leg, 1>{Right}, {Left},
                                       {{Phy, Phy1}}, {{Phy, Phy2}});
@@ -63,6 +64,25 @@ struct MPS
             lattice[i].leg_rename({{Phy3,Phy}});
             lattice[i+1] = Node::multiple(std::get<2>(svd), std::get<1>(svd), Left);
             lattice[i+1].leg_rename({{Phy4,Phy}});
+        }
+        for(int i=L-1;i>0;i--)
+        {
+            auto big = Node::contract(lattice[i], lattice[i-1],
+                                      Eigen::array<Leg, 1>{Left}, {Right},
+                                      {{Phy, Phy1}}, {{Phy, Phy2}});
+            auto Big = Node::contract(big, Hamiltonian,
+                                      Eigen::array<Leg, 2>{Phy1, Phy2}, {Phy1, Phy2});
+            auto svd = Node::svd(Big,
+                                 Eigen::array<Leg, 2>{Right, Phy3}, Left, Right, D);
+            lattice[i] = std::get<0>(svd);
+            lattice[i].leg_rename({{Phy3,Phy}});
+            lattice[i-1] = Node::multiple(std::get<2>(svd), std::get<1>(svd), Left);
+            lattice[i-1].leg_rename({{Phy4,Phy}});
+        }
+        for(int i=0;i<L;i++)
+        {
+            Eigen::Tensor<Base, 0> norm = lattice[i].abs().maximum();
+            lattice[i] = lattice[i]/norm();
         }
     }
 };
