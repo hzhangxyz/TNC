@@ -1,212 +1,256 @@
 diff --git a/unsupported/Eigen/CXX11/src/Tensor/Tensor.h b/unsupported/Eigen/CXX11/src/Tensor/Tensor.h
-index 17cee495f..fb26c68cf 100644
+index 17cee495f..be2d237f5 100644
 --- a/unsupported/Eigen/CXX11/src/Tensor/Tensor.h
 +++ b/unsupported/Eigen/CXX11/src/Tensor/Tensor.h
-@@ -334,6 +334,7 @@ class Tensor : public TensorBase<Tensor<Scalar_, NumIndices_, Options_, IndexTyp
+@@ -334,6 +334,9 @@ class Tensor : public TensorBase<Tensor<Scalar_, NumIndices_, Options_, IndexTyp
      EIGEN_STRONG_INLINE Tensor(const Self& other)
        : m_storage(other.m_storage)
      {
-+       this->leg_info = other.leg_info;
++      #ifdef EIGEN_NODE_HPP
++      this->leg_info = other.leg_info;
++      #endif
      }
  
  #if EIGEN_HAS_VARIADIC_TEMPLATES
-@@ -387,6 +388,7 @@ class Tensor : public TensorBase<Tensor<Scalar_, NumIndices_, Options_, IndexTyp
+@@ -387,6 +390,9 @@ class Tensor : public TensorBase<Tensor<Scalar_, NumIndices_, Options_, IndexTyp
        Assign assign(*this, other.derived());
        resize(TensorEvaluator<const Assign, DefaultDevice>(assign, DefaultDevice()).dimensions());
        internal::TensorExecutor<const Assign, DefaultDevice>::run(assign, DefaultDevice());
++      #ifdef EIGEN_NODE_HPP
 +      this->leg_info = other.leg_info;
++      #endif
      }
      template<typename OtherDerived>
      EIGEN_DEVICE_FUNC
-@@ -396,6 +398,7 @@ class Tensor : public TensorBase<Tensor<Scalar_, NumIndices_, Options_, IndexTyp
+@@ -396,6 +402,9 @@ class Tensor : public TensorBase<Tensor<Scalar_, NumIndices_, Options_, IndexTyp
        Assign assign(*this, other.derived());
        resize(TensorEvaluator<const Assign, DefaultDevice>(assign, DefaultDevice()).dimensions());
        internal::TensorExecutor<const Assign, DefaultDevice>::run(assign, DefaultDevice());
++      #ifdef EIGEN_NODE_HPP
 +      this->leg_info = other.leg_info;
++      #endif
      }
  
      #if EIGEN_HAS_RVALUE_REFERENCES
-@@ -404,11 +407,13 @@ class Tensor : public TensorBase<Tensor<Scalar_, NumIndices_, Options_, IndexTyp
+@@ -404,11 +413,17 @@ class Tensor : public TensorBase<Tensor<Scalar_, NumIndices_, Options_, IndexTyp
        : Tensor()
      {
        m_storage.swap(other.m_storage);
++      #ifdef EIGEN_NODE_HPP
 +      this->leg_info = other.leg_info;
++      #endif
      }
      EIGEN_DEVICE_FUNC
      EIGEN_STRONG_INLINE Tensor& operator=(Self&& other)
      {
        m_storage.swap(other.m_storage);
++      #ifdef EIGEN_NODE_HPP
 +      this->leg_info = other.leg_info;
++      #endif
        return *this;
      }
      #endif
-@@ -420,6 +425,7 @@ class Tensor : public TensorBase<Tensor<Scalar_, NumIndices_, Options_, IndexTyp
+@@ -420,6 +435,9 @@ class Tensor : public TensorBase<Tensor<Scalar_, NumIndices_, Options_, IndexTyp
        Assign assign(*this, other);
        resize(TensorEvaluator<const Assign, DefaultDevice>(assign, DefaultDevice()).dimensions());
        internal::TensorExecutor<const Assign, DefaultDevice>::run(assign, DefaultDevice());
++      #ifdef EIGEN_NODE_HPP
 +      this->leg_info = other.leg_info;
++      #endif
        return *this;
      }
      template<typename OtherDerived>
-@@ -430,6 +436,7 @@ class Tensor : public TensorBase<Tensor<Scalar_, NumIndices_, Options_, IndexTyp
+@@ -430,6 +448,9 @@ class Tensor : public TensorBase<Tensor<Scalar_, NumIndices_, Options_, IndexTyp
        Assign assign(*this, other);
        resize(TensorEvaluator<const Assign, DefaultDevice>(assign, DefaultDevice()).dimensions());
        internal::TensorExecutor<const Assign, DefaultDevice>::run(assign, DefaultDevice());
++      #ifdef EIGEN_NODE_HPP
 +      this->leg_info = other.leg_info;
++      #endif
        return *this;
      }
  
 diff --git a/unsupported/Eigen/CXX11/src/Tensor/TensorBase.h b/unsupported/Eigen/CXX11/src/Tensor/TensorBase.h
-index 7d9afa685..0c15a0f82 100644
+index 7d9afa685..62e1445d2 100644
 --- a/unsupported/Eigen/CXX11/src/Tensor/TensorBase.h
 +++ b/unsupported/Eigen/CXX11/src/Tensor/TensorBase.h
-@@ -873,6 +873,8 @@ class TensorBase<Derived, ReadOnlyAccessors>
+@@ -873,6 +873,10 @@ class TensorBase<Derived, ReadOnlyAccessors>
        return TensorForcedEvalOp<const Derived>(derived());
      }
  
++    #ifdef EIGEN_NODE_HPP
 +    Eigen::array<Node::Leg, DerivedTraits::NumDimensions> leg_info = Node::DefaultLeg<DerivedTraits::NumDimensions>::value;
++    #endif
 +
    protected:
      template <typename Scalar, int NumIndices, int Options, typename IndexType> friend class Tensor;
      template <typename Scalar, typename Dimensions, int Option, typename IndexTypes> friend class TensorFixedSize;
 diff --git a/unsupported/Eigen/CXX11/src/Tensor/TensorExpr.h b/unsupported/Eigen/CXX11/src/Tensor/TensorExpr.h
-index 4b6540c07..2c08a702c 100644
+index 4b6540c07..3898994a8 100644
 --- a/unsupported/Eigen/CXX11/src/Tensor/TensorExpr.h
 +++ b/unsupported/Eigen/CXX11/src/Tensor/TensorExpr.h
-@@ -60,7 +60,9 @@ class TensorCwiseNullaryOp : public TensorBase<TensorCwiseNullaryOp<NullaryOp, X
+@@ -60,7 +60,11 @@ class TensorCwiseNullaryOp : public TensorBase<TensorCwiseNullaryOp<NullaryOp, X
      typedef typename Eigen::internal::traits<TensorCwiseNullaryOp>::Index Index;
  
      EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE TensorCwiseNullaryOp(const XprType& xpr, const NullaryOp& func = NullaryOp())
 -        : m_xpr(xpr), m_functor(func) {}
 +        : m_xpr(xpr), m_functor(func) {
++          #ifdef EIGEN_NODE_HPP
 +          this->leg_info = xpr.leg_info;
++          #endif
 +        }
  
      EIGEN_DEVICE_FUNC
      const typename internal::remove_all<typename XprType::Nested>::type&
-@@ -122,7 +124,9 @@ class TensorCwiseUnaryOp : public TensorBase<TensorCwiseUnaryOp<UnaryOp, XprType
+@@ -122,7 +126,11 @@ class TensorCwiseUnaryOp : public TensorBase<TensorCwiseUnaryOp<UnaryOp, XprType
      typedef typename Eigen::internal::traits<TensorCwiseUnaryOp>::Index Index;
  
      EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE TensorCwiseUnaryOp(const XprType& xpr, const UnaryOp& func = UnaryOp())
 -      : m_xpr(xpr), m_functor(func) {}
 +      : m_xpr(xpr), m_functor(func) {
++        #ifdef EIGEN_NODE_HPP
 +        this->leg_info = xpr.leg_info;
++        #endif
 +      }
  
      EIGEN_DEVICE_FUNC
      const UnaryOp& functor() const { return m_functor; }
-@@ -202,7 +206,9 @@ class TensorCwiseBinaryOp : public TensorBase<TensorCwiseBinaryOp<BinaryOp, LhsX
+@@ -202,7 +210,11 @@ class TensorCwiseBinaryOp : public TensorBase<TensorCwiseBinaryOp<BinaryOp, LhsX
      typedef typename Eigen::internal::traits<TensorCwiseBinaryOp>::Index Index;
  
      EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE TensorCwiseBinaryOp(const LhsXprType& lhs, const RhsXprType& rhs, const BinaryOp& func = BinaryOp())
 -        : m_lhs_xpr(lhs), m_rhs_xpr(rhs), m_functor(func) {}
 +        : m_lhs_xpr(lhs), m_rhs_xpr(rhs), m_functor(func) {
++          #ifdef EIGEN_NODE_HPP
 +          this->leg_info = lhs.leg_info;
++          #endif
 +        }
  
      EIGEN_DEVICE_FUNC
      const BinaryOp& functor() const { return m_functor; }
-@@ -281,7 +287,9 @@ class TensorCwiseTernaryOp : public TensorBase<TensorCwiseTernaryOp<TernaryOp, A
+@@ -281,7 +293,11 @@ class TensorCwiseTernaryOp : public TensorBase<TensorCwiseTernaryOp<TernaryOp, A
      typedef typename Eigen::internal::traits<TensorCwiseTernaryOp>::Index Index;
  
      EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE TensorCwiseTernaryOp(const Arg1XprType& arg1, const Arg2XprType& arg2, const Arg3XprType& arg3, const TernaryOp& func = TernaryOp())
 -        : m_arg1_xpr(arg1), m_arg2_xpr(arg2), m_arg3_xpr(arg3), m_functor(func) {}
 +        : m_arg1_xpr(arg1), m_arg2_xpr(arg2), m_arg3_xpr(arg3), m_functor(func) {
++          #ifdef EIGEN_NODE_HPP
 +          this->leg_info = arg1.leg_info;
++          #endif
 +        }
  
      EIGEN_DEVICE_FUNC
      const TernaryOp& functor() const { return m_functor; }
-@@ -360,7 +368,9 @@ class TensorSelectOp : public TensorBase<TensorSelectOp<IfXprType, ThenXprType,
+@@ -360,7 +376,11 @@ class TensorSelectOp : public TensorBase<TensorSelectOp<IfXprType, ThenXprType,
                     const ThenXprType& a_then,
                     const ElseXprType& a_else)
        : m_condition(a_condition), m_then(a_then), m_else(a_else)
 -    { }
 +    {
++      #ifdef EIGEN_NODE_HPP
 +      this->leg_info = a_condition.leg_info;
++      #endif
 +    }
  
      EIGEN_DEVICE_FUNC
      const IfXprType& ifExpression() const { return m_condition; }
 diff --git a/unsupported/Eigen/CXX11/src/Tensor/TensorFixedSize.h b/unsupported/Eigen/CXX11/src/Tensor/TensorFixedSize.h
-index 71ba56773..3aeb08d2e 100644
+index 71ba56773..27fb0653f 100644
 --- a/unsupported/Eigen/CXX11/src/Tensor/TensorFixedSize.h
 +++ b/unsupported/Eigen/CXX11/src/Tensor/TensorFixedSize.h
-@@ -310,12 +310,14 @@ class TensorFixedSize : public TensorBase<TensorFixedSize<Scalar_, Dimensions_,
+@@ -310,12 +310,18 @@ class TensorFixedSize : public TensorBase<TensorFixedSize<Scalar_, Dimensions_,
      EIGEN_STRONG_INLINE TensorFixedSize(const Self& other)
        : m_storage(other.m_storage)
      {
++      #ifdef EIGEN_NODE_HPP
 +      this->leg_info = other.leg_info;
++      #endif
      }
  
  #if EIGEN_HAS_RVALUE_REFERENCES
      EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE TensorFixedSize(Self&& other)
        : m_storage(other.m_storage)
      {
++      #ifdef EIGEN_NODE_HPP
 +      this->leg_info = other.leg_info;
++      #endif
      }
  #endif
  
-@@ -326,6 +328,7 @@ class TensorFixedSize : public TensorBase<TensorFixedSize<Scalar_, Dimensions_,
+@@ -326,6 +332,9 @@ class TensorFixedSize : public TensorBase<TensorFixedSize<Scalar_, Dimensions_,
        typedef TensorAssignOp<TensorFixedSize, const OtherDerived> Assign;
        Assign assign(*this, other.derived());
        internal::TensorExecutor<const Assign, DefaultDevice>::run(assign, DefaultDevice());
++      #ifdef EIGEN_NODE_HPP
 +      this->leg_info = other.leg_info;
++      #endif
      }
      template<typename OtherDerived>
      EIGEN_DEVICE_FUNC
-@@ -334,6 +337,7 @@ class TensorFixedSize : public TensorBase<TensorFixedSize<Scalar_, Dimensions_,
+@@ -334,6 +343,9 @@ class TensorFixedSize : public TensorBase<TensorFixedSize<Scalar_, Dimensions_,
        typedef TensorAssignOp<TensorFixedSize, const OtherDerived> Assign;
        Assign assign(*this, other.derived());
        internal::TensorExecutor<const Assign, DefaultDevice>::run(assign, DefaultDevice());
++      #ifdef EIGEN_NODE_HPP
 +      this->leg_info = other.leg_info;
++      #endif
      }
  
      EIGEN_DEVICE_FUNC
-@@ -344,6 +348,7 @@ class TensorFixedSize : public TensorBase<TensorFixedSize<Scalar_, Dimensions_,
+@@ -344,6 +356,9 @@ class TensorFixedSize : public TensorBase<TensorFixedSize<Scalar_, Dimensions_,
        typedef TensorAssignOp<Self, const TensorFixedSize> Assign;
        Assign assign(*this, other);
        internal::TensorExecutor<const Assign, DefaultDevice>::run(assign, DefaultDevice());
++      #ifdef EIGEN_NODE_HPP
 +      this->leg_info = other.leg_info;
++      #endif
        return *this;
      }
      template<typename OtherDerived>
-@@ -355,6 +360,7 @@ class TensorFixedSize : public TensorBase<TensorFixedSize<Scalar_, Dimensions_,
+@@ -355,6 +370,9 @@ class TensorFixedSize : public TensorBase<TensorFixedSize<Scalar_, Dimensions_,
        typedef TensorAssignOp<Self, const OtherDerived> Assign;
        Assign assign(*this, other);
        internal::TensorExecutor<const Assign, DefaultDevice>::run(assign, DefaultDevice());
++      #ifdef EIGEN_NODE_HPP
 +      this->leg_info = other.leg_info;
++      #endif
        return *this;
      }
  
 diff --git a/unsupported/Eigen/CXX11/src/Tensor/TensorMap.h b/unsupported/Eigen/CXX11/src/Tensor/TensorMap.h
-index 28f629080..3e5f6ddd7 100644
+index 28f629080..f9a373132 100644
 --- a/unsupported/Eigen/CXX11/src/Tensor/TensorMap.h
 +++ b/unsupported/Eigen/CXX11/src/Tensor/TensorMap.h
-@@ -105,7 +105,9 @@ template<typename PlainObjectType, int Options_, template <class> class MakePoin
+@@ -105,7 +105,11 @@ template<typename PlainObjectType, int Options_, template <class> class MakePoin
  
      EIGEN_DEVICE_FUNC EIGEN_STRONG_INLINE TensorMap(PlainObjectType& tensor)
        : m_data(tensor.data()), m_dimensions(tensor.dimensions())
 -    { }
 +    {
++      #ifdef EIGEN_NODE_HPP
 +      this->leg_info = tensor.leg_info;
++      #endif
 +    }
  
      EIGEN_DEVICE_FUNC
      EIGEN_STRONG_INLINE Index rank() const { return m_dimensions.rank(); }
-@@ -302,6 +304,7 @@ template<typename PlainObjectType, int Options_, template <class> class MakePoin
+@@ -302,6 +306,9 @@ template<typename PlainObjectType, int Options_, template <class> class MakePoin
        typedef TensorAssignOp<Self, const Self> Assign;
        Assign assign(*this, other);
        internal::TensorExecutor<const Assign, DefaultDevice>::run(assign, DefaultDevice());
++      #ifdef EIGEN_NODE_HPP
 +      this->leg_info = other.leg_info;
++      #endif
        return *this;
      }
  
-@@ -312,6 +315,7 @@ template<typename PlainObjectType, int Options_, template <class> class MakePoin
+@@ -312,6 +319,9 @@ template<typename PlainObjectType, int Options_, template <class> class MakePoin
        typedef TensorAssignOp<Self, const OtherDerived> Assign;
        Assign assign(*this, other);
        internal::TensorExecutor<const Assign, DefaultDevice>::run(assign, DefaultDevice());
++      #ifdef EIGEN_NODE_HPP
 +      this->leg_info = other.leg_info;
++      #endif
        return *this;
      }
  
