@@ -108,16 +108,20 @@ void __debug_tensor(const TensorType& x, const char* name, std::ostream& os)
 #define get_index(it, pool) std::distance((pool).begin(), find_in(it, pool))
 
 // 好，这是contract，第一个参数是缩并脚标的类型，index类型使用了第一个tensor的trait
-// ContractionOp 的 NumDimensions 不大对劲
+// 不返回op了,直接返回eval后的东西
 template<typename TensorType1, typename TensorType2, std::size_t ContractNum>
-EIGEN_DEVICE_FUNC const Eigen::TensorContractionOp<
+/*EIGEN_DEVICE_FUNC const Eigen::TensorContractionOp<
                     const Eigen::array<
                       Eigen::IndexPair<
                         typename Eigen::internal::traits<TensorType1>::Index>,
                       ContractNum>,
                     const TensorType1,
                     const TensorType2,
-                    const Eigen::NoOpOutputKernel>
+                    const Eigen::NoOpOutputKernel>*/
+EIGEN_DEVICE_FUNC Eigen::Tensor<
+                    typename TensorType1::Scalar,
+                    TensorType1::NumDimensions + TensorType2::NumDimensions -
+                      2*ContractNum>
 contract(const TensorType1& tensor1,
          const TensorType2& tensor2,
          const Eigen::array<Leg, ContractNum>& leg1,
@@ -126,8 +130,8 @@ contract(const TensorType1& tensor1,
          std::map<Leg, Leg> map2={})
 {
   // 构造给eigen用的缩并脚标对
-  typedef Eigen::internal::traits<TensorType1> Traits;
-  typedef typename Traits::Index Index;
+  //typedef Eigen::internal::traits<TensorType1> Traits;
+  typedef typename TensorType1::Index Index;
   Eigen::array<Eigen::IndexPair<Index>, ContractNum> dims;
   for(auto i=0; i<ContractNum; i++)
   {
@@ -172,23 +176,23 @@ contract(const TensorType1& tensor1,
 template<typename TensorType, std::size_t SplitNum>
 EIGEN_DEVICE_FUNC std::tuple<
                     Eigen::Tensor<
-                      typename Eigen::internal::traits<TensorType>::Scalar,
+                      typename TensorType::Scalar,
                       SplitNum+1>,
-                    Eigen::Tensor<typename Eigen::internal::traits<TensorType>::Scalar, 1>,
+                    Eigen::Tensor<typename TensorType::Scalar, 1>,
                     Eigen::Tensor<
-                      typename Eigen::internal::traits<TensorType>::Scalar,
-                      Eigen::internal::traits<TensorType>::NumDimensions-SplitNum+1>>
+                      typename TensorType::Scalar,
+                      TensorType::NumDimensions-SplitNum+1>>
 svd(const TensorType& tensor,
     const Eigen::array<Leg, SplitNum>& legs,
     Leg new_leg1,
     Leg new_leg2,
-    typename Eigen::internal::traits<TensorType>::Index cut=-1)
+    typename TensorType::Index cut=-1)
 {
   // 先各种重命名烦人的东西
-  typedef Eigen::internal::traits<TensorType> Traits;
-  typedef typename Traits::Index Index;
-  typedef typename Traits::Scalar Scalar;
-  static const std::size_t Rank = Traits::NumDimensions;
+  //typedef Eigen::internal::traits<TensorType> Traits;
+  typedef typename TensorType::Index Index;
+  typedef typename TensorType::Scalar Scalar;
+  static const std::size_t Rank = TensorType::NumDimensions;
   static const std::size_t LeftRank = SplitNum;
   static const std::size_t RightRank = Rank - SplitNum;
   typedef Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic> MatrixS;
@@ -264,11 +268,11 @@ svd(const TensorType& tensor,
 template<typename TensorType, std::size_t SplitNum>
 EIGEN_DEVICE_FUNC std::tuple<
                     Eigen::Tensor<
-                      typename Eigen::internal::traits<TensorType>::Scalar,
+                      typename TensorType::Scalar,
                       SplitNum+1>,
                     Eigen::Tensor<
-                      typename Eigen::internal::traits<TensorType>::Scalar,
-                      Eigen::internal::traits<TensorType>::NumDimensions-SplitNum+1>>
+                      typename TensorType::Scalar,
+                      TensorType::NumDimensions-SplitNum+1>>
 qr(const TensorType& tensor,
    const Eigen::array<Leg, SplitNum>& legs,
    Leg new_leg1,
@@ -276,10 +280,10 @@ qr(const TensorType& tensor,
    bool computeR = true)
 {
   // 先各种重命名烦人的东西
-  typedef Eigen::internal::traits<TensorType> Traits;
-  typedef typename Traits::Index Index;
-  typedef typename Traits::Scalar Scalar;
-  static const std::size_t Rank = Traits::NumDimensions;
+  //typedef Eigen::internal::traits<TensorType> Traits;
+  typedef typename TensorType::Index Index;
+  typedef typename TensorType::Scalar Scalar;
+  static const std::size_t Rank = TensorType::NumDimensions;
   static const std::size_t LeftRank = SplitNum;
   static const std::size_t RightRank = Rank - SplitNum;
   typedef Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic> MatrixS;
@@ -353,19 +357,20 @@ qr(const TensorType& tensor,
 
 /* transpose */
 template <typename TensorType>
-EIGEN_DEVICE_FUNC const Eigen::TensorShufflingOp<
+/*EIGEN_DEVICE_FUNC const Eigen::TensorShufflingOp<
                     const Eigen::array<
                       typename Eigen::internal::traits<TensorType>::Index,
                       Eigen::internal::traits<TensorType>::NumDimensions>,
-                    const TensorType>
+                    const TensorType>*/
+EIGEN_DEVICE_FUNC TensorType
 transpose(const TensorType& tensor,
-          const Eigen::array<Leg, Eigen::internal::traits<TensorType>::NumDimensions>& new_legs)
+          const Eigen::array<Leg, TensorType::NumDimensions>& new_legs)
 {
   // 惯例，alias各种东西
-  typedef Eigen::internal::traits<TensorType> Traits;
-  typedef typename Traits::Index Index;
-  typedef typename Traits::Scalar Scalar;
-  static const std::size_t Rank = Traits::NumDimensions;
+  //typedef Eigen::internal::traits<TensorType> Traits;
+  typedef typename TensorType::Index Index;
+  typedef typename TensorType::Scalar Scalar;
+  static const std::size_t Rank = TensorType::NumDimensions;
   // 准备转置后的脚
   Eigen::array<Index, Rank> to_shuffle;
   for(auto i=0;i<Rank;i++)
@@ -382,7 +387,7 @@ transpose(const TensorType& tensor,
 /* multiple */
 // https://stackoverflow.com/questions/47040173/how-to-multiple-two-eigen-tensors-along-batch-dimension
 template <typename TensorType>
-EIGEN_DEVICE_FUNC const Eigen::TensorCwiseBinaryOp<
+/*EIGEN_DEVICE_FUNC const Eigen::TensorCwiseBinaryOp<
                     Eigen::internal::scalar_product_op<
                       typename Eigen::internal::traits<TensorType>::Scalar>,
                     const TensorType,
@@ -396,15 +401,16 @@ EIGEN_DEVICE_FUNC const Eigen::TensorCwiseBinaryOp<
                           Eigen::internal::traits<TensorType>::NumDimensions>,
                         const Eigen::Tensor<
                           typename Eigen::internal::traits<TensorType>::Scalar,
-                          1>>>>
+                          1>>>>*/
+EIGEN_DEVICE_FUNC TensorType
 multiple(const TensorType& tensor,
-         const Eigen::Tensor<typename Eigen::internal::traits<TensorType>::Scalar, 1>& vector,
+         const Eigen::Tensor<typename TensorType::Scalar, 1>& vector,
          Leg leg)
 {
-  typedef Eigen::internal::traits<TensorType> Traits;
-  typedef typename Traits::Index Index;
-  typedef typename Traits::Scalar Scalar;
-  static const std::size_t Rank = Traits::NumDimensions;
+  //typedef Eigen::internal::traits<TensorType> Traits;
+  typedef typename TensorType::Index Index;
+  typedef typename TensorType::Scalar Scalar;
+  static const std::size_t Rank = TensorType::NumDimensions;
   auto index = get_index(leg, tensor.leg_info);
   // 分别创建to_reshape和to_bcast，然后直接cwise乘起来
   Eigen::array<Index, Rank> to_reshape; // {1,1,1,1,n,1,1,1,1}
@@ -417,6 +423,7 @@ multiple(const TensorType& tensor,
     to_bcast[i] = tensor.dimension(i);
   }
   to_bcast[index] = 1;
+  // 注意cwise乘积顺序, leg是根据左边那个来的
   return tensor * vector.reshape(to_reshape).broadcast(to_bcast);
 }
 
