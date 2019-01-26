@@ -60,7 +60,9 @@ struct MPS
             auto svd = Node::svd(Big,
                                  Eigen::array<Leg, 2>{Left, Phy3}, Right, Left, D);
             lattice[i] = std::get<0>(svd);
+            lattice[i].leg_rename({{Phy3,Phy}});
             lattice[i+1] = Node::multiple(std::get<2>(svd), std::get<1>(svd), Left);
+            lattice[i+1].leg_rename({{Phy4,Phy}});
         }
     }
 };

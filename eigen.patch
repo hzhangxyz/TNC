@@ -71,15 +71,27 @@ index 17cee495f..be2d237f5 100644
      }
  
 diff --git a/unsupported/Eigen/CXX11/src/Tensor/TensorBase.h b/unsupported/Eigen/CXX11/src/Tensor/TensorBase.h
-index 7d9afa685..62e1445d2 100644
+index 7d9afa685..880c8f798 100644
 --- a/unsupported/Eigen/CXX11/src/Tensor/TensorBase.h
 +++ b/unsupported/Eigen/CXX11/src/Tensor/TensorBase.h
-@@ -873,6 +873,10 @@ class TensorBase<Derived, ReadOnlyAccessors>
+@@ -873,6 +873,22 @@ class TensorBase<Derived, ReadOnlyAccessors>
        return TensorForcedEvalOp<const Derived>(derived());
      }
  
 +    #ifdef EIGEN_NODE_HPP
 +    Eigen::array<Node::Leg, DerivedTraits::NumDimensions> leg_info = Node::DefaultLeg<DerivedTraits::NumDimensions>::value;
++
++    void leg_rename(std::map<Node::Leg, Node::Leg> dict)
++    {
++      for(Node::Leg& i : this->leg_info)
++      {
++        auto where = dict.find(i);
++        if(where!=dict.end())
++        {
++          i = where->second;
++        }
++      }
++    }
 +    #endif
 +
    protected:
