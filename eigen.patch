@@ -85,6 +85,19 @@ index 7d9afa685..62e1445d2 100644
    protected:
      template <typename Scalar, int NumIndices, int Options, typename IndexType> friend class Tensor;
      template <typename Scalar, typename Dimensions, int Option, typename IndexTypes> friend class TensorFixedSize;
+diff --git a/unsupported/Eigen/CXX11/src/Tensor/TensorContraction.h b/unsupported/Eigen/CXX11/src/Tensor/TensorContraction.h
+index 61a4e1a3a..6ca881f27 100644
+--- a/unsupported/Eigen/CXX11/src/Tensor/TensorContraction.h
++++ b/unsupported/Eigen/CXX11/src/Tensor/TensorContraction.h
+@@ -102,7 +102,7 @@ struct traits<TensorContractionOp<Dimensions, LhsXprType, RhsXprType, OutputKern
+   typedef typename remove_reference<RhsNested>::type _RhsNested;
+ 
+   // From NumDims below.
+-  static const int NumDimensions = traits<RhsXprType>::NumDimensions + traits<RhsXprType>::NumDimensions - 2 * array_size<Dimensions>::value;
++  static const int NumDimensions = traits<LhsXprType>::NumDimensions + traits<RhsXprType>::NumDimensions - 2 * array_size<Dimensions>::value;
+   static const int Layout = traits<LhsXprType>::Layout;
+   typedef typename conditional<Pointer_type_promotion<typename LhsXprType::Scalar, Scalar>::val,
+   typename traits<LhsXprType>::PointerType, typename traits<RhsXprType>::PointerType>::type PointerType;
 diff --git a/unsupported/Eigen/CXX11/src/Tensor/TensorExpr.h b/unsupported/Eigen/CXX11/src/Tensor/TensorExpr.h
 index 4b6540c07..3898994a8 100644
 --- a/unsupported/Eigen/CXX11/src/Tensor/TensorExpr.h

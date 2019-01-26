@@ -49,12 +49,8 @@ struct MPS
             debug_tensor(rr);
             auto tmp = Node::contract(lattice[i-1], rr, Eigen::array<Leg,1>{Right}, {Left});
             for(auto i : tmp.leg_info){
-                std::cout << i << " ";
-            }std::cout << "\n";
-            auto tmp2 = lattice[i-1].contract(rr, Eigen::array<Eigen::IndexPair<int>,1>{Eigen::IndexPair<int>{0,1}});
-            for(auto i : tmp2.leg_info){
-                std::cout << i << " ";
-            }std::cout << "\n";
+                std::cout << i << " ";  
+            }
             //Eigen::Tensor<Base, 3> tt = tmp;
             //debug_tensor(tmp);
             break;

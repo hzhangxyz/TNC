@@ -108,6 +108,7 @@ void __debug_tensor(const TensorType& x, const char* name, std::ostream& os)
 #define get_index(it, pool) std::distance((pool).begin(), find_in(it, pool))
 
 // 好，这是contract，第一个参数是缩并脚标的类型，index类型使用了第一个tensor的trait
+// ContractionOp 的 NumDimensions 不大对劲
 template<typename TensorType1, typename TensorType2, std::size_t ContractNum>
 EIGEN_DEVICE_FUNC const Eigen::TensorContractionOp<
                     const Eigen::array<
