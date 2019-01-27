@@ -164,10 +164,29 @@ contract(const TensorType1& tensor1,
   return res;
 }
 
+template<typename T1, typename T2, typename T3>
+class svd_res : public std::tuple<T1, T2, T3>
+{
+public:
+  svd_res(T1 t1, T2 t2, T3 t3) : std::tuple<T1, T2, T3>(t1, t2, t3) {}
+  inline T1& U()
+  {
+    return std::get<0>(*this);
+  }
+  inline T2& S()
+  {
+    return std::get<1>(*this);
+  }
+  inline T3& V()
+  {
+    return std::get<2>(*this);
+  }
+};
+
 /* svd */
 // svd返回的是含有U,S,V的一个tuple
 template<std::size_t SplitNum, typename TensorType>
-EIGEN_DEVICE_FUNC std::tuple<
+EIGEN_DEVICE_FUNC svd_res<
                     Eigen::Tensor<
                       typename TensorType::Scalar,
                       SplitNum+1>,
@@ -250,16 +269,31 @@ svd(const TensorType& tensor,
     S.leg_info = Eigen::array<Leg, 1>{new_leg1};
   }
   V.leg_info = right_new_leg;
-  return std::tuple<Eigen::Tensor<Scalar, LeftRank+1>,
+  return svd_res<Eigen::Tensor<Scalar, LeftRank+1>,
                     Eigen::Tensor<Scalar, 1>,
                     Eigen::Tensor<Scalar, RightRank+1>> {U, S, V};
 }
+
+template<typename T1, typename T2>
+class qr_res : public std::tuple<T1, T2>
+{
+public:
+  qr_res(T1 t1, T2 t2) : std::tuple<T1, T2>(t1, t2) {}
+  inline T1& Q()
+  {
+    return std::get<0>(*this);
+  }
+  inline T2& R()
+  {
+    return std::get<1>(*this);
+  }
+};
 
 /* qr */
 // qr外部和svd一样，里面需要处理一下
 // http://www.netlib.org/lapack/explore-html/df/dc5/group__variants_g_ecomputational_ga3766ea903391b5cf9008132f7440ec7b.html
 template<std::size_t SplitNum, typename TensorType>
-EIGEN_DEVICE_FUNC std::tuple<
+EIGEN_DEVICE_FUNC qr_res<
                     Eigen::Tensor<
                       typename TensorType::Scalar,
                       SplitNum+1>,
@@ -344,7 +378,7 @@ qr(const TensorType& tensor,
   // leg处理一下
   Q.leg_info = left_new_leg;
   R.leg_info = right_new_leg;
-  return std::tuple<Eigen::Tensor<Scalar, LeftRank+1>,
+  return qr_res<Eigen::Tensor<Scalar, LeftRank+1>,
                     Eigen::Tensor<Scalar, RightRank+1>> {Q, R};
 }
 

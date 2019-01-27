@@ -46,30 +46,30 @@ void test_svd(){
   A.leg_info = {Left, Up, Down, Right};
   auto svd = Node::svd<2>(A, {Up, Down}, Phy, Phy);
   //debug_tensor(A);
-  //debug_tensor(std::get<0>(svd));
-  //debug_tensor(std::get<1>(svd));
-  //debug_tensor(std::get<2>(svd));
+  //debug_tensor(svd.U());
+  //debug_tensor(svd.S());
+  //debug_tensor(svd.V());
   float tmp = 0;
   for(int i=0;i<10;i++){
-    tmp += std::get<0>(svd)(2,3,i) * std::get<1>(svd)(i) * std::get<2>(svd)(1,4,i);
+    tmp += svd.U()(2,3,i) * svd.S()(i) * svd.V()(1,4,i);
   }
   assert(abs(tmp-A(1,2,3,4))<1e-5);
   tmp = 0;
   for(int i=0;i<10;i++){
-    tmp += std::get<0>(svd)(1,3,i) * std::get<1>(svd)(i) * std::get<2>(svd)(1,2,i);
+    tmp += svd.U()(1,3,i) * svd.S()(i) * svd.V()(1,2,i);
   }
   assert(abs(tmp-A(1,1,3,2))<1e-5);
   int cut = 8;
   auto svd_cut = Node::svd<2>(A, {Up, Down}, Phy, Phy, cut);
   tmp = 0;
   for(int i=0;i<cut;i++){
-    tmp += std::get<0>(svd)(1,3,i) * std::get<1>(svd)(i) * std::get<2>(svd)(1,2,i);
+    tmp += svd.U()(1,3,i) * svd.S()(i) * svd.V()(1,2,i);
   }
   //for(int i=0;i<cut;i++){
-  //  std::cout << std::get<1>(svd)(i) << " ";
+  //  std::cout << svd.S()(i) << " ";
   //}
   //std::cout << "\n" << tmp << "-" << A(1,1,3,2) << "=" << tmp-A(1,1,3,2) << std::endl;
-  assert(std::get<1>(svd)(0)>std::get<1>(svd)(1));
+  assert(svd.S()(0)>svd.S()(1));
   assert(abs(tmp-A(1,1,3,2))<0.1);
 }
 
@@ -79,19 +79,19 @@ void test_qr(){
   A.leg_info = {Left, Up, Down, Right};
   auto qr = Node::qr<2>(A, {Up, Down}, Phy, Phy);
   //debug_tensor(A);
-  //debug_tensor(std::get<0>(qr));
-  //debug_tensor(std::get<1>(qr));
+  //debug_tensor(qr.Q());
+  //debug_tensor(qr.R());
   double tmp = 0;
   for(int i=0;i<10;i++){
-    tmp += std::get<0>(qr)(1,1,i) * std::get<1>(qr)(i,0,3);
+    tmp += qr.Q()(1,1,i) * qr.R()(i,0,3);
   }
   assert(abs(tmp-A(0,1,1,3))<1e-5);
-  assert(std::get<0>(qr).leg_info[0]==Up);
-  assert(std::get<0>(qr).leg_info[1]==Down);
-  assert(std::get<0>(qr).leg_info[2]==Phy);
-  assert(std::get<1>(qr).leg_info[0]==Phy);
-  assert(std::get<1>(qr).leg_info[1]==Left);
-  assert(std::get<1>(qr).leg_info[2]==Right);
+  assert(qr.Q().leg_info[0]==Up);
+  assert(qr.Q().leg_info[1]==Down);
+  assert(qr.Q().leg_info[2]==Phy);
+  assert(qr.R().leg_info[0]==Phy);
+  assert(qr.R().leg_info[1]==Left);
+  assert(qr.R().leg_info[2]==Right);
   Eigen::TensorFixedSize<double, Eigen::Sizes<2,3,4,5>> B;
   B.setRandom();
   B.leg_info = {Left, Up, Down, Right};
@@ -102,7 +102,7 @@ void test_qr(){
   auto qr3 = Node::qr<2>(B, {Left, Right}, Phy, Phy);
   //debug_tensor(std::get<0>(qr3));
   //debug_tensor(std::get<1>(qr3));
-  assert(std::get<0>(qr2)(1,1,1)=std::get<0>(qr3)(1,1,1));
+  assert(qr2.Q()(1,1,1)=qr3.Q()(1,1,1));
 }
 
 void test_scalar(){

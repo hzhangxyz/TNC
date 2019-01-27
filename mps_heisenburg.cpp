@@ -44,22 +44,22 @@ struct MPS
     {
         for(int i=L-1;i>1;i--)
         {
-            auto qr = Node::qr(lattice[i], Eigen::array<Leg,2>{Phy, Right}, Left, Right);
+            auto qr = Node::qr<2>(lattice[i], {Phy, Right}, Left, Right);
             lattice[i] = std::get<0>(qr);
-            lattice[i-1] = Node::contract(lattice[i-1], std::get<1>(qr), Eigen::array<Leg,1>{Right}, {Left});
+            lattice[i-1] = Node::contract<1>(lattice[i-1], std::get<1>(qr), {Right}, {Left});
         }
     }
     void update()
     {
         for(int i=0;i<L-1;i++)
         {
-            auto big = Node::contract(lattice[i], lattice[i+1],
-                                      Eigen::array<Leg, 1>{Right}, {Left},
+            auto big = Node::contract<1>(lattice[i], lattice[i+1],
+                                      {Right}, {Left},
                                       {{Phy, Phy1}}, {{Phy, Phy2}});
-            auto Big = Node::contract(big, Hamiltonian,
-                                      Eigen::array<Leg, 2>{Phy1, Phy2}, {Phy1, Phy2});
-            auto svd = Node::svd(Big,
-                                 Eigen::array<Leg, 2>{Left, Phy3}, Right, Left, D);
+            auto Big = Node::contract<2>(big, Hamiltonian,
+                                      {Phy1, Phy2}, {Phy1, Phy2});
+            auto svd = Node::svd<2>(Big,
+                                    {Left, Phy3}, Right, Left, D);
             lattice[i] = std::get<0>(svd);
             lattice[i].leg_rename({{Phy3,Phy}});
             lattice[i+1] = Node::multiple(std::get<2>(svd), std::get<1>(svd), Left);
@@ -67,13 +67,13 @@ struct MPS
         }
         for(int i=L-1;i>0;i--)
         {
-            auto big = Node::contract(lattice[i], lattice[i-1],
-                                      Eigen::array<Leg, 1>{Left}, {Right},
+            auto big = Node::contract<1>(lattice[i], lattice[i-1],
+                                      {Left}, {Right},
                                       {{Phy, Phy1}}, {{Phy, Phy2}});
-            auto Big = Node::contract(big, Hamiltonian,
-                                      Eigen::array<Leg, 2>{Phy1, Phy2}, {Phy1, Phy2});
-            auto svd = Node::svd(Big,
-                                 Eigen::array<Leg, 2>{Right, Phy3}, Left, Right, D);
+            auto Big = Node::contract<2>(big, Hamiltonian,
+                                      {Phy1, Phy2}, {Phy1, Phy2});
+            auto svd = Node::svd<2>(Big,
+                                    {Right, Phy3}, Left, Right, D);
             lattice[i] = std::get<0>(svd);
             lattice[i].leg_rename({{Phy3,Phy}});
             lattice[i-1] = Node::multiple(std::get<2>(svd), std::get<1>(svd), Right);
