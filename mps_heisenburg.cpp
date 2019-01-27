@@ -21,6 +21,7 @@ struct MPS
     {
         std::cout << "Created a MPS\n";
         Hamiltonian = Hamiltonian/Base(4);
+
         for(int i=1;i<L-1;i++)
         {
             lattice[i] = Eigen::Tensor<Base, 3>(D, D, Dphy);
@@ -45,8 +46,8 @@ struct MPS
         for(int i=L-1;i>1;i--)
         {
             auto qr = Node::qr<2>(lattice[i], {Phy, Right}, Left, Right);
-            lattice[i] = std::get<0>(qr);
-            lattice[i-1] = Node::contract<1>(lattice[i-1], std::get<1>(qr), {Right}, {Left});
+            lattice[i] = qr.Q();
+            lattice[i-1] = Node::contract<1>(lattice[i-1], qr.R(), {Right}, {Left});
         }
     }
     void update()
@@ -60,9 +61,9 @@ struct MPS
                                       {Phy1, Phy2}, {Phy1, Phy2});
             auto svd = Node::svd<2>(Big,
                                     {Left, Phy3}, Right, Left, D);
-            lattice[i] = std::get<0>(svd);
+            lattice[i] = svd.U();
             lattice[i].leg_rename({{Phy3,Phy}});
-            lattice[i+1] = Node::multiple(std::get<2>(svd), std::get<1>(svd), Left);
+            lattice[i+1] = Node::multiple(svd.V(), svd.S(), Left);
             lattice[i+1].leg_rename({{Phy4,Phy}});
         }
         for(int i=L-1;i>0;i--)
@@ -74,15 +75,14 @@ struct MPS
                                       {Phy1, Phy2}, {Phy1, Phy2});
             auto svd = Node::svd<2>(Big,
                                     {Right, Phy3}, Left, Right, D);
-            lattice[i] = std::get<0>(svd);
+            lattice[i] = svd.U();
             lattice[i].leg_rename({{Phy3,Phy}});
-            lattice[i-1] = Node::multiple(std::get<2>(svd), std::get<1>(svd), Right);
+            lattice[i-1] = Node::multiple(svd.V(), svd.S(), Right);
             lattice[i-1].leg_rename({{Phy4,Phy}});
         }
         for(int i=0;i<L;i++)
         {
-            Eigen::Tensor<Base, 0> norm = lattice[i].abs().maximum();
-            lattice[i] = lattice[i]/norm();
+            lattice[i] = Node::max_normalize(lattice[i]);
         }
     }
     void update(int n)

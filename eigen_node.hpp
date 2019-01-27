@@ -438,6 +438,28 @@ multiple(const TensorType& tensor,
   return tensor * vector.reshape(to_reshape).broadcast(to_bcast);
 }
 
+template <typename TensorType>
+EIGEN_DEVICE_FUNC Eigen::Tensor<
+                    typename TensorType::Scalar,
+                    TensorType::NumDimensions>
+max_normalize(TensorType& tensor)
+{
+  typedef typename TensorType::Scalar Scalar;
+  Scalar norm = Eigen::Tensor<Scalar, 0>(tensor.abs().maximum())();
+  return tensor/norm;
+}
+
+template <typename TensorType>
+EIGEN_DEVICE_FUNC Eigen::Tensor<
+                    typename TensorType::Scalar,
+                    TensorType::NumDimensions>
+normalize(TensorType& tensor)
+{
+  typedef typename TensorType::Scalar Scalar;
+  Scalar norm = Eigen::Tensor<Scalar, 0>(tensor.square().sum())();
+  return tensor/norm;
+}
+
 #undef get_index
 #undef not_found
 #undef find_in

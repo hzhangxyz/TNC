@@ -1,5 +1,11 @@
 CXX=clang++
-CXXFLAGS+= -I./eigen-git-mirror -I./eigen-git-mirror/unsupported -g -lblas -llapacke --std=c++11
+CXXFLAGS+= -I./eigen-git-mirror -I./eigen-git-mirror/unsupported -lblas -llapacke --std=c++11
+
+ifeq ($(DEBUG), YES)
+	CXXFLAGS+= -g
+else
+	CXXFLAGS+= -O3 -march=native 
+endif
 
 object = main mps_heisenburg
 
