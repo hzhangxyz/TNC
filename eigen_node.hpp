@@ -109,15 +109,8 @@ void __debug_tensor(const TensorType& x, const char* name, std::ostream& os)
 
 // 好，这是contract，第一个参数是缩并脚标的类型，index类型使用了第一个tensor的trait
 // 不返回op了,直接返回eval后的东西
-template<typename TensorType1, typename TensorType2, std::size_t ContractNum>
-/*EIGEN_DEVICE_FUNC const Eigen::TensorContractionOp<
-                    const Eigen::array<
-                      Eigen::IndexPair<
-                        typename Eigen::internal::traits<TensorType1>::Index>,
-                      ContractNum>,
-                    const TensorType1,
-                    const TensorType2,
-                    const Eigen::NoOpOutputKernel>*/
+// 注意contract num在最前面,为了partial deduction
+template<std::size_t ContractNum, typename TensorType1, typename TensorType2>
 EIGEN_DEVICE_FUNC Eigen::Tensor<
                     typename TensorType1::Scalar,
                     TensorType1::NumDimensions + TensorType2::NumDimensions -
@@ -173,7 +166,7 @@ contract(const TensorType1& tensor1,
 
 /* svd */
 // svd返回的是含有U,S,V的一个tuple
-template<typename TensorType, std::size_t SplitNum>
+template<std::size_t SplitNum, typename TensorType>
 EIGEN_DEVICE_FUNC std::tuple<
                     Eigen::Tensor<
                       typename TensorType::Scalar,
@@ -265,7 +258,7 @@ svd(const TensorType& tensor,
 /* qr */
 // qr外部和svd一样，里面需要处理一下
 // http://www.netlib.org/lapack/explore-html/df/dc5/group__variants_g_ecomputational_ga3766ea903391b5cf9008132f7440ec7b.html
-template<typename TensorType, std::size_t SplitNum>
+template<std::size_t SplitNum, typename TensorType>
 EIGEN_DEVICE_FUNC std::tuple<
                     Eigen::Tensor<
                       typename TensorType::Scalar,
@@ -357,11 +350,6 @@ qr(const TensorType& tensor,
 
 /* transpose */
 template <typename TensorType>
-/*EIGEN_DEVICE_FUNC const Eigen::TensorShufflingOp<
-                    const Eigen::array<
-                      typename Eigen::internal::traits<TensorType>::Index,
-                      Eigen::internal::traits<TensorType>::NumDimensions>,
-                    const TensorType>*/
 EIGEN_DEVICE_FUNC Eigen::Tensor<
                     typename TensorType::Scalar,
                     TensorType::NumDimensions>
@@ -389,21 +377,6 @@ transpose(const TensorType& tensor,
 /* multiple */
 // https://stackoverflow.com/questions/47040173/how-to-multiple-two-eigen-tensors-along-batch-dimension
 template <typename TensorType>
-/*EIGEN_DEVICE_FUNC const Eigen::TensorCwiseBinaryOp<
-                    Eigen::internal::scalar_product_op<
-                      typename Eigen::internal::traits<TensorType>::Scalar>,
-                    const TensorType,
-                    const Eigen::TensorBroadcastingOp<
-                      const Eigen::array<
-                        typename Eigen::internal::traits<TensorType>::Index,
-                        Eigen::internal::traits<TensorType>::NumDimensions>,
-                      const Eigen::TensorReshapingOp<
-                        const Eigen::array<
-                          typename Eigen::internal::traits<TensorType>::Index,
-                          Eigen::internal::traits<TensorType>::NumDimensions>,
-                        const Eigen::Tensor<
-                          typename Eigen::internal::traits<TensorType>::Scalar,
-                          1>>>>*/
 EIGEN_DEVICE_FUNC Eigen::Tensor<
                     typename TensorType::Scalar,
                     TensorType::NumDimensions>
