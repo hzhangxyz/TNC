@@ -1,5 +1,5 @@
-#ifndef EIGEN_NODE_HPP
-#define EIGEN_NODE_HPP
+#ifndef EIGEN_NODE_HPP_
+#define EIGEN_NODE_HPP_
 #include <iostream>
 #include <array>
 #include <vector>
@@ -339,7 +339,7 @@ qr(const TensorType& tensor,
   static const std::size_t RightRank = Rank - SplitNum;
   typedef Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic> MatrixS;
   // 首先按照leg，分别把整个tensor的legs分左右两边
-  Index left_size=1, right_size=1;
+  Index left_size = 1, right_size = 1;
   Index left_index = 0, right_index = 0;
   Eigen::array<Index, Rank> to_shuffle;
   // 需要计算一下U, V矩阵的样子
@@ -504,8 +504,8 @@ using Leg = Node::Leg;
 
 // what export:
 // include Eigen
-// include Node(Leg, DefaultLeg, 几个运算用的函数, __debug_tensor)
+// include Node(Leg, DefaultLeg, 几个运算用的函数, __*)
 // macro debug_tensor
 // Leg as using and its var as static var
 
-#endif //EIGEN_NODE_HPP
+#endif //EIGEN_NODE_HPP_
