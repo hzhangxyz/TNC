@@ -188,8 +188,9 @@ struct MPS
         for(int i=0;i<n;i++)
         {
             update();
-            std::cout << i << "\r";
+            std::cout << i << "\r" << std::flush;
         }
+        std::cout << "\n";
     }
     Base energy_at_i_and_i_plus_1(int i)
     {
