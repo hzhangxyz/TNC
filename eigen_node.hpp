@@ -1,10 +1,12 @@
 #ifndef EIGEN_NODE_HPP_
 #define EIGEN_NODE_HPP_
 #include <iostream>
+#include <tuple>
 #include <array>
 #include <vector>
 #include <map>
 #include <string>
+#include <algorithm>
 
 namespace Node
 {
@@ -48,7 +50,7 @@ template<std::size_t rank>
 struct DefaultLeg
 {
   static const std::array<Leg, rank> value;
-  //static const Leg value[rank];
+  // static const Leg value[rank];
 };
 // 如果是4 rank，那大概是哈密顿量，设置一下leg
 template <>
@@ -68,8 +70,8 @@ OOO
 
 /* 设置好Leg那些东西后,载入Eigen，注意Eigen内部实际上也是做了一些变化的 */
 // 可能需要mkl blas那些东西
-//#define EIGEN_USE_MKL_ALL
-//#define EIGEN_USE_MKL_VML
+// #define EIGEN_USE_MKL_ALL
+// #define EIGEN_USE_MKL_VML
 #define EIGEN_USE_LAPACKE
 #define EIGEN_USE_BLAS
 #include <Eigen/Dense>
@@ -82,15 +84,17 @@ template<typename TensorType>
 void __debug_tensor(const TensorType& x, const char* name, std::ostream& os)
 {
   os << " " << name << "= { rank=" << x.NumDimensions << " dims=[";
-  for(auto i=0;i<x.NumDimensions;i++)
+  for (auto i = 0; i < x.NumDimensions; i++)
   {
     os << "(" << x.dimension(i) << "|" << x.leg_info[i] << "), ";
   }
   os << "], size=" << x.size();
-  if(x.size()<500)
+  if (x.size() < 500)
   {
     os << ", data=\n" << x << " }\n";
-  }else{
+  }
+  else
+  {
     os << "}";
   }
 }
@@ -102,12 +106,12 @@ void __debug_tensor(const TensorType& x, const char* name, std::ostream& os)
 // dimension, size 是 Index
 
 /* contraction */
-//定义三个index用的macro，这样方便，写函数的话vector和map的格式都不一样，这里类型检查看起来也没比宏强多少
-/*template<typename ContainerType, typename T>
+// 定义三个index用的macro，这样方便，写函数的话vector和map的格式都不一样，这里类型检查看起来也没比宏强多少
+/* template<typename ContainerType, typename T>
 inline auto find_in(const T& it, const ContainerType& pool)
 {
   return std::find(pool.begin(), pool.end(), it);
-}*/
+} */
 
 template<typename ContainerType, typename T>
 inline typename ContainerType::const_iterator
@@ -115,21 +119,21 @@ __find_in(const T& it, const ContainerType& pool)
 {
   return std::find(pool.begin(), pool.end(), it);
 }
-//#define find_in(it, pool) std::find((pool).begin(), (pool).end(), it)
+// #define find_in(it, pool) std::find((pool).begin(), (pool).end(), it)
 
 template<typename ContainerType, typename T>
 inline bool __not_found(const T& it, const ContainerType& pool)
 {
   return __find_in(it, pool) == pool.end();
 }
-//#define not_found(it, pool) find_in(it, pool) == (pool).end()
+// #define not_found(it, pool) find_in(it, pool) == (pool).end()
 
 template<typename ContainerType, typename T>
 inline int __get_index(const T& it, const ContainerType& pool)
 {
   return std::distance(pool.begin(), __find_in(it, pool));
 }
-//#define get_index(it, pool) std::distance((pool).begin(), find_in(it, pool))
+// #define get_index(it, pool) std::distance((pool).begin(), find_in(it, pool))
 
 // 好，这是contract，第一个参数是缩并脚标的类型，index类型使用了第一个tensor的trait
 // 不返回op了,直接返回eval后的东西
@@ -143,44 +147,46 @@ contract(const TensorType1& tensor1,
          const TensorType2& tensor2,
          const Eigen::array<Leg, ContractNum>& leg1,
          const Eigen::array<Leg, ContractNum>& leg2,
-         std::map<Leg, Leg> map1={},
-         std::map<Leg, Leg> map2={})
+         std::map<Leg, Leg> map1 = {},
+         std::map<Leg, Leg> map2 = {})
 {
   // 构造给eigen用的缩并脚标对
-  //typedef Eigen::internal::traits<TensorType1> Traits;
+  // typedef Eigen::internal::traits<TensorType1> Traits;
   typedef typename TensorType1::Index Index;
   Eigen::array<Eigen::IndexPair<Index>, ContractNum> dims;
-  for(auto i=0; i<ContractNum; i++)
+  for (auto i = 0; i < ContractNum; i++)
   {
     dims[i].first = __get_index(leg1[i], tensor1.leg_info);
   }
-  for(auto i=0; i<ContractNum; i++)
+  for (auto i =0; i < ContractNum; i++)
   {
     dims[i].second = __get_index(leg2[i], tensor2.leg_info);
   }
   // 然后运行，注意这里的auto返回的是一个op，是lazy的
   auto res = tensor1.contract(tensor2, dims);
   // 创建新的tensor的leg
-  auto i=0;
+  auto i = 0;
   // 根据是否在leg内，是否map，来更新result的leg info, 两部分一样，所以写成个宏
   #define check_in_and_map(it, leg, map) {\
-    if(__not_found(it, leg))\
+    if (__not_found(it, leg))\
     {\
       auto l = map.find(it);\
-      if(l==map.end())\
+      if (l == map.end())\
       {\
         res.leg_info[i++] = it;\
-      }else{\
+      }\
+      else\
+      {\
         res.leg_info[i++] = l->second;\
       }\
     }\
   }
   // 对于两个tensor之前的每个leg， 不在legs里则加入res，但如果还在map里需要先map
-  for(auto j=0;j<tensor1.leg_info.size();j++)
+  for (auto j = 0; j < tensor1.leg_info.size(); j++)
   {
     check_in_and_map(tensor1.leg_info[j], leg1, map1);
   }
-  for(auto j=0;j<tensor2.leg_info.size();j++)
+  for (auto j = 0; j < tensor2.leg_info.size(); j++)
   {
     check_in_and_map(tensor2.leg_info[j], leg2, map2);
   }
@@ -191,7 +197,7 @@ contract(const TensorType1& tensor1,
 template<typename T1, typename T2, typename T3>
 class __svd_res : public std::tuple<T1, T2, T3>
 {
-public:
+ public:
   __svd_res(T1 t1, T2 t2, T3 t3) : std::tuple<T1, T2, T3>(t1, t2, t3) {}
   inline T1& U()
   {
@@ -222,10 +228,10 @@ svd(const TensorType& tensor,
     const Eigen::array<Leg, SplitNum>& legs,
     Leg new_leg1,
     Leg new_leg2,
-    typename TensorType::Index cut=-1)
+    typename TensorType::Index cut = -1)
 {
   // 先各种重命名烦人的东西
-  //typedef Eigen::internal::traits<TensorType> Traits;
+  // typedef Eigen::internal::traits<TensorType> Traits;
   typedef typename TensorType::Index Index;
   typedef typename TensorType::Scalar Scalar;
   static const std::size_t Rank = TensorType::NumDimensions;
@@ -233,7 +239,7 @@ svd(const TensorType& tensor,
   static const std::size_t RightRank = Rank - SplitNum;
   typedef Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic> MatrixS;
   // 首先按照leg，分别把整个tensor的legs分左右两边
-  Index left_size=1, right_size=1;
+  Index left_size = 1, right_size = 1;
   Index left_index = 0, right_index = 0;
   Eigen::array<Index, Rank> to_shuffle;
   // 需要计算一下U, V矩阵的样子
@@ -242,9 +248,9 @@ svd(const TensorType& tensor,
   Eigen::array<Leg, LeftRank + 1> left_new_leg;
   Eigen::array<Leg, RightRank + 1> right_new_leg;
   // 开始分了, 记录总size, shape和leg
-  for(auto i=0;i<Rank;i++)
+  for (auto i = 0; i < Rank; i++)
   {
-    if(__not_found(tensor.leg_info[i], legs))
+    if (__not_found(tensor.leg_info[i], legs))
     {
       // 放右边
       right_size *= tensor.dimension(i);
@@ -252,7 +258,9 @@ svd(const TensorType& tensor,
       right_new_leg[right_index] = tensor.leg_info[i];
       to_shuffle[SplitNum+right_index] = i;
       right_index++;
-    }else{
+    }
+    else
+    {
       // 放左边
       left_size *= tensor.dimension(i);
       left_new_shape[left_index] = tensor.dimension(i);
@@ -262,8 +270,8 @@ svd(const TensorType& tensor,
     }
   }
   // 考虑中间的那个cut
-  auto min_size = left_size<right_size?left_size:right_size;
-  if((cut!=-1)&&(cut<min_size))
+  auto min_size = (left_size < right_size)?left_size:right_size;
+  if ((cut != -1)&&(cut < min_size))
   {
     min_size = cut;
   }
@@ -275,7 +283,7 @@ svd(const TensorType& tensor,
   auto shuffled = tensor.shuffle(to_shuffle);
   Eigen::Tensor<Scalar, 2> reshaped = shuffled.reshape(Eigen::array<Index, 2>{left_size, right_size});
   Eigen::Map<MatrixS> matrix(reshaped.data(), left_size, right_size);
-  //Eigen::JacobiSVD<MatrixS, Eigen::HouseholderQRPreconditioner> svd(matrix, Eigen::ComputeThinU | Eigen::ComputeThinV);
+  // Eigen::JacobiSVD<MatrixS, Eigen::HouseholderQRPreconditioner> svd(matrix, Eigen::ComputeThinU | Eigen::ComputeThinV);
   Eigen::BDCSVD<MatrixS> svd(matrix, Eigen::ComputeThinU | Eigen::ComputeThinV);
   // 再把矩阵变回tensor
   Eigen::Tensor<Scalar, LeftRank+1> U(left_new_shape);
@@ -288,7 +296,7 @@ svd(const TensorType& tensor,
   copy_data(svd.matrixV(), V);
   #undef copy_data
   U.leg_info = left_new_leg;
-  if(new_leg1==new_leg2)
+  if (new_leg1 == new_leg2)
   {
     S.leg_info = Eigen::array<Leg, 1>{new_leg1};
   }
@@ -301,7 +309,7 @@ svd(const TensorType& tensor,
 template<typename T1, typename T2>
 class __qr_res : public std::tuple<T1, T2>
 {
-public:
+ public:
   __qr_res(T1 t1, T2 t2) : std::tuple<T1, T2>(t1, t2) {}
   inline T1& Q()
   {
@@ -331,7 +339,7 @@ qr(const TensorType& tensor,
    bool computeR = true)
 {
   // 先各种重命名烦人的东西
-  //typedef Eigen::internal::traits<TensorType> Traits;
+  // typedef Eigen::internal::traits<TensorType> Traits;
   typedef typename TensorType::Index Index;
   typedef typename TensorType::Scalar Scalar;
   static const std::size_t Rank = TensorType::NumDimensions;
@@ -348,9 +356,9 @@ qr(const TensorType& tensor,
   Eigen::array<Leg, LeftRank + 1> left_new_leg;
   Eigen::array<Leg, RightRank + 1> right_new_leg;
   // 开始分了, 记录总size, shape和leg， 注意方向和svd不同
-  for(auto i=0;i<Rank;i++)
+  for (auto i = 0; i < Rank; i++)
   {
-    if(__not_found(tensor.leg_info[i], legs))
+    if (__not_found(tensor.leg_info[i], legs))
     {
       // 放右边
       right_size *= tensor.dimension(i);
@@ -358,7 +366,9 @@ qr(const TensorType& tensor,
       right_new_leg[right_index+1] = tensor.leg_info[i];
       to_shuffle[SplitNum+right_index] = i;
       right_index++;
-    }else{
+    }
+    else
+    {
       // 放左边
       left_size *= tensor.dimension(i);
       left_new_shape[left_index] = tensor.dimension(i);
@@ -368,7 +378,7 @@ qr(const TensorType& tensor,
     }
   }
   // 考虑中间的那个cut
-  auto min_size = left_size<right_size?left_size:right_size;
+  auto min_size = (left_size < right_size)?left_size:right_size;
   // 然后把最后一个脚加上去
   left_new_leg[left_index] = new_leg1;
   right_new_leg[0] = new_leg2;
@@ -381,21 +391,21 @@ qr(const TensorType& tensor,
   Eigen::HouseholderQR<Eigen::Ref<MatrixS>> qr(matrix);
   // 再把矩阵变回tensor, R先不malloc，因为可能不需要
   Eigen::Tensor<Scalar, LeftRank+1> Q(left_new_shape);
-  Eigen::Tensor<Scalar, RightRank+1> R;//(right_new_shape);
+  Eigen::Tensor<Scalar, RightRank+1> R; // (right_new_shape);
   // 创建matrix map， 然后Q使用eigen的函数乘上identity，R使用matrixQR再删掉一些东西
-  Eigen::Map<MatrixS> matrixQ (Q.data(), left_size, min_size);
-  matrixQ = qr.householderQ() * MatrixS::Identity(left_size,min_size);
-  if(computeR)
+  Eigen::Map<MatrixS> matrixQ(Q.data(), left_size, min_size);
+  matrixQ = qr.householderQ() * MatrixS::Identity(left_size, min_size);
+  if (computeR)
   {
     // 如果设置了computeR（默认true），那么算一下R矩阵
     R = Eigen::Tensor<Scalar, RightRank+1> (right_new_shape);
-    Eigen::Map<MatrixS> matrixR (R.data(), min_size, right_size);
+    Eigen::Map<MatrixS> matrixR(R.data(), min_size, right_size);
     auto matrixQR = qr.matrixQR();
-    for(auto j=0;j<right_size;j++)
+    for (auto j = 0; j < right_size; j++)
     {
       // 截取上三角区域作为R，下面那半都是零
-      auto fill_num = (min_size<(j+1))?min_size:(j+1);
-      std::copy(&matrixQR(0, j), &matrixQR(0, j)+fill_num, &matrixR(0,j));
+      auto fill_num = (min_size < (j+1))?min_size:(j+1);
+      std::copy(&matrixQR(0, j), &matrixQR(0, j)+fill_num, &matrixR(0, j));
       std::fill(&matrixR(0, j)+fill_num, &matrixR(0, j)+min_size, 0);
     }
   }
@@ -415,18 +425,18 @@ transpose(const TensorType& tensor,
           const Eigen::array<Leg, TensorType::NumDimensions>& new_legs)
 {
   // 惯例，alias各种东西
-  //typedef Eigen::internal::traits<TensorType> Traits;
+  // typedef Eigen::internal::traits<TensorType> Traits;
   typedef typename TensorType::Index Index;
   typedef typename TensorType::Scalar Scalar;
   static const std::size_t Rank = TensorType::NumDimensions;
   // 准备转置后的脚
   Eigen::array<Index, Rank> to_shuffle;
-  for(auto i=0;i<Rank;i++)
+  for (auto i = 0; i < Rank; i++)
   {
     // 在原来的leg中一个一个找新的leg
     to_shuffle[i] = __get_index(new_legs[i], tensor.leg_info);
   }
-  //然后就可以转置并设置新的leg了
+  // 然后就可以转置并设置新的leg了
   auto res = tensor.shuffle(to_shuffle);
   res.leg_info = new_legs;
   return res;
@@ -442,7 +452,7 @@ multiple(const TensorType& tensor,
          const Eigen::Tensor<typename TensorType::Scalar, 1>& vector,
          Leg leg)
 {
-  //typedef Eigen::internal::traits<TensorType> Traits;
+  // typedef Eigen::internal::traits<TensorType> Traits;
   typedef typename TensorType::Index Index;
   typedef typename TensorType::Scalar Scalar;
   static const std::size_t Rank = TensorType::NumDimensions;
@@ -453,7 +463,7 @@ multiple(const TensorType& tensor,
   to_reshape[index] = tensor.dimension(index);
   // reshape 后的bcast方式
   Eigen::array<Index, Rank> to_bcast;
-  for(auto i=0; i<Rank; i++)
+  for (auto i = 0; i < Rank; i++)
   {
     to_bcast[i] = tensor.dimension(i);
   }
@@ -466,7 +476,7 @@ template <typename TensorType>
 EIGEN_DEVICE_FUNC Eigen::Tensor<
                     typename TensorType::Scalar,
                     TensorType::NumDimensions>
-max_normalize(TensorType& tensor)
+max_normalize(const TensorType& tensor)
 {
   typedef typename TensorType::Scalar Scalar;
   Scalar norm = Eigen::Tensor<Scalar, 0>(tensor.abs().maximum())();
@@ -477,16 +487,16 @@ template <typename TensorType>
 EIGEN_DEVICE_FUNC Eigen::Tensor<
                     typename TensorType::Scalar,
                     TensorType::NumDimensions>
-normalize(TensorType& tensor)
+normalize(const TensorType& tensor)
 {
   typedef typename TensorType::Scalar Scalar;
   Scalar norm = Eigen::Tensor<Scalar, 0>(tensor.square().sum())();
   return tensor/norm;
 }
 
-//#undef get_index
-//#undef not_found
-//#undef find_in
+// #undef get_index
+// #undef not_found
+// #undef find_in
 
 } // namespace Node
 
@@ -508,4 +518,4 @@ using Leg = Node::Leg;
 // macro debug_tensor
 // Leg as using and its var as static var
 
-#endif //EIGEN_NODE_HPP_
+#endif // EIGEN_NODE_HPP_
