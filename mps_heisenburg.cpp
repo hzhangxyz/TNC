@@ -17,13 +17,8 @@ struct MPS
     std::vector<Eigen::Tensor<Base, 4>> __right_contract;
 
     MPS(int _D, int _L, float _delta_t = 0.01, int _Dphy = 2,
-        Base* hamiltonian_data = nullptr)
+        Base* hamiltonian_data = nullptr) : D(_D), L(_L), delta_t(Base(_delta_t)), Dphy(_Dphy)
     {
-        D = _D;
-        L = _L;
-        delta_t = Base(_delta_t);
-        Dphy = _Dphy;
-
         Base default_hamiltonian_data[16] = {
             1/4. , 0   , 0   , 0   ,
             0    ,-1/4., 2/4., 0   ,
@@ -46,12 +41,9 @@ struct MPS
         };
         Update = Identity - delta_t * Hamiltonian;
 
-        for(int i=0;i<L;i++)
-        {
-            lattice.push_back(Eigen::Tensor<Base, 3>{});
-            __left_contract.push_back(Eigen::Tensor<Base, 4>{});
-            __right_contract.push_back(Eigen::Tensor<Base, 4>{});
-        }
+        lattice = std::vector<Eigen::Tensor<Base, 3>>(L, Eigen::Tensor<Base, 3>{});
+        __left_contract = std::vector<Eigen::Tensor<Base, 4>>(L, Eigen::Tensor<Base, 4>{});
+        __right_contract = std::vector<Eigen::Tensor<Base, 4>>(L, Eigen::Tensor<Base, 4>{});
 
         for(int i=1;i<L-1;i++)
         {

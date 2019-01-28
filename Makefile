@@ -8,7 +8,7 @@ else
 	CXXFLAGS+= -g
 endif
 
-object = main mps_heisenburg
+object = main mps_heisenburg peps
 
 default: main
 
