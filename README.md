@@ -1,24 +1,27 @@
 ## Eigen上的custom修改
-- add the following line in `TensorBase.h` at the end of `class TensorBase` public domain
-```
-Eigen::array<Leg, DerivedTraits::NumDimensions> leg_info = DefaultLeg<DerivedTraits::NumDimensions>::value;
-``` 
+- at the end of `class TensorBase` public domain, 加入了leg_info的成员, 以及leg_rename函数
 - `Tensor.h` 中的constructor和operator=需要各种复制`leg_info`, 两个来源，一个运算，一个复制(只有在需要resize的时候需要)
-- 有一个lapacke.h定义了I的macro引起的冲突bug，重命名即可
 - 在cwise那些东西里加了leg info，从而实现scalar功能
+- fixed LhsXprType + RhsXprType的typo
 
-## 外部操作
+## Eigen_Node接口
 - leg的维护需要手动对各种op做wrap，所以除非在外面设定`leg_info`，只能使用plugin中的几个函数
-- scalar在里面实现
+- scalar在里面实现, 可以直接用cwise操作
+
+### 外部操作
 - contract
-- svd， qr
+- svd, qr
 - transpose
 - multiple
+- max_normalize, normalize
 
-## 一些与Eigen相关的问题
+### what else
+- debug_tensor, Leg's var
+
+## 一些与Eigen相关的问题(效率问题)
 
 - contract什么的做不到静态，所以contract什么的都需要动态malloc
-- 可能浪费的copy有：svd和qr中的shuffle，svd和qr的结果再copy回tensor
+- 可能浪费的copy有：svd和qr中的shuffle，svd和qr的结果再copy回tensor:
 
 |         |shuffle          |copy回tensor             |
 |---------|-----------------|-------------------------|
@@ -28,5 +31,3 @@ Eigen::array<Leg, DerivedTraits::NumDimensions> leg_info = DefaultLeg<DerivedTra
 ## SVD，QR选择的问题
 - (D=10)×2×2=40大概是svd的量级，是16的两倍多，所以就用BDCSVD吧
 - svd的时候,如何转置最快?(这里贪心策略吧)
-
-很多地方要加多余的 Eigen::array<Leg,2> 的问题,很烦

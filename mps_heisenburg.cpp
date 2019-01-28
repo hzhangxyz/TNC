@@ -24,7 +24,7 @@ struct MPS
 
     std::vector<Eigen::Tensor<Base, 3>> lattice;
     std::vector<Eigen::Tensor<Base, 4>> __left_contract;
-    std::vector<Eigen::Tensor<Base, 4>> __right_contract; 
+    std::vector<Eigen::Tensor<Base, 4>> __right_contract;
     //std::array<Eigen::Tensor<Base, 1>, L-1> env;
 
     Eigen::Tensor<Base, 4> left_contract(int i)

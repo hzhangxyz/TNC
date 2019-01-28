@@ -510,12 +510,12 @@ DefineLegs(4);
 #undef DefineLegs
 #undef DefineLeg
 
-using Leg = Node::Leg;
+// using Leg = Node::Leg;
 
 // what export:
 // include Eigen
 // include Node(Leg, DefaultLeg, 几个运算用的函数, __*)
 // macro debug_tensor
-// Leg as using and its var as static var
+// Leg's var
 
 #endif // EIGEN_NODE_HPP_
