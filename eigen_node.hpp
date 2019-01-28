@@ -103,9 +103,33 @@ void __debug_tensor(const TensorType& x, const char* name, std::ostream& os)
 
 /* contraction */
 //定义三个index用的macro，这样方便，写函数的话vector和map的格式都不一样，这里类型检查看起来也没比宏强多少
-#define find_in(it, pool) std::find((pool).begin(), (pool).end(), it)
-#define not_found(it, pool) find_in(it, pool) == (pool).end()
-#define get_index(it, pool) std::distance((pool).begin(), find_in(it, pool))
+/*template<typename ContainerType, typename T>
+inline auto find_in(const T& it, const ContainerType& pool)
+{
+  return std::find(pool.begin(), pool.end(), it);
+}*/
+
+template<typename ContainerType, typename T>
+inline typename ContainerType::const_iterator
+__find_in(const T& it, const ContainerType& pool)
+{
+  return std::find(pool.begin(), pool.end(), it);
+}
+//#define find_in(it, pool) std::find((pool).begin(), (pool).end(), it)
+
+template<typename ContainerType, typename T>
+inline bool __not_found(const T& it, const ContainerType& pool)
+{
+  return __find_in(it, pool) == pool.end();
+}
+//#define not_found(it, pool) find_in(it, pool) == (pool).end()
+
+template<typename ContainerType, typename T>
+inline int __get_index(const T& it, const ContainerType& pool)
+{
+  return std::distance(pool.begin(), __find_in(it, pool));
+}
+//#define get_index(it, pool) std::distance((pool).begin(), find_in(it, pool))
 
 // 好，这是contract，第一个参数是缩并脚标的类型，index类型使用了第一个tensor的trait
 // 不返回op了,直接返回eval后的东西
@@ -128,11 +152,11 @@ contract(const TensorType1& tensor1,
   Eigen::array<Eigen::IndexPair<Index>, ContractNum> dims;
   for(auto i=0; i<ContractNum; i++)
   {
-    dims[i].first = get_index(leg1[i], tensor1.leg_info);
+    dims[i].first = __get_index(leg1[i], tensor1.leg_info);
   }
   for(auto i=0; i<ContractNum; i++)
   {
-    dims[i].second = get_index(leg2[i], tensor2.leg_info);
+    dims[i].second = __get_index(leg2[i], tensor2.leg_info);
   }
   // 然后运行，注意这里的auto返回的是一个op，是lazy的
   auto res = tensor1.contract(tensor2, dims);
@@ -140,7 +164,7 @@ contract(const TensorType1& tensor1,
   auto i=0;
   // 根据是否在leg内，是否map，来更新result的leg info, 两部分一样，所以写成个宏
   #define check_in_and_map(it, leg, map) {\
-    if(not_found(it, leg))\
+    if(__not_found(it, leg))\
     {\
       auto l = map.find(it);\
       if(l==map.end())\
@@ -165,10 +189,10 @@ contract(const TensorType1& tensor1,
 }
 
 template<typename T1, typename T2, typename T3>
-class svd_res : public std::tuple<T1, T2, T3>
+class __svd_res : public std::tuple<T1, T2, T3>
 {
 public:
-  svd_res(T1 t1, T2 t2, T3 t3) : std::tuple<T1, T2, T3>(t1, t2, t3) {}
+  __svd_res(T1 t1, T2 t2, T3 t3) : std::tuple<T1, T2, T3>(t1, t2, t3) {}
   inline T1& U()
   {
     return std::get<0>(*this);
@@ -186,7 +210,7 @@ public:
 /* svd */
 // svd返回的是含有U,S,V的一个tuple
 template<std::size_t SplitNum, typename TensorType>
-EIGEN_DEVICE_FUNC svd_res<
+EIGEN_DEVICE_FUNC __svd_res<
                     Eigen::Tensor<
                       typename TensorType::Scalar,
                       SplitNum+1>,
@@ -220,7 +244,7 @@ svd(const TensorType& tensor,
   // 开始分了, 记录总size, shape和leg
   for(auto i=0;i<Rank;i++)
   {
-    if(not_found(tensor.leg_info[i], legs))
+    if(__not_found(tensor.leg_info[i], legs))
     {
       // 放右边
       right_size *= tensor.dimension(i);
@@ -269,16 +293,16 @@ svd(const TensorType& tensor,
     S.leg_info = Eigen::array<Leg, 1>{new_leg1};
   }
   V.leg_info = right_new_leg;
-  return svd_res<Eigen::Tensor<Scalar, LeftRank+1>,
+  return __svd_res<Eigen::Tensor<Scalar, LeftRank+1>,
                     Eigen::Tensor<Scalar, 1>,
                     Eigen::Tensor<Scalar, RightRank+1>> {U, S, V};
 }
 
 template<typename T1, typename T2>
-class qr_res : public std::tuple<T1, T2>
+class __qr_res : public std::tuple<T1, T2>
 {
 public:
-  qr_res(T1 t1, T2 t2) : std::tuple<T1, T2>(t1, t2) {}
+  __qr_res(T1 t1, T2 t2) : std::tuple<T1, T2>(t1, t2) {}
   inline T1& Q()
   {
     return std::get<0>(*this);
@@ -293,7 +317,7 @@ public:
 // qr外部和svd一样，里面需要处理一下
 // http://www.netlib.org/lapack/explore-html/df/dc5/group__variants_g_ecomputational_ga3766ea903391b5cf9008132f7440ec7b.html
 template<std::size_t SplitNum, typename TensorType>
-EIGEN_DEVICE_FUNC qr_res<
+EIGEN_DEVICE_FUNC __qr_res<
                     Eigen::Tensor<
                       typename TensorType::Scalar,
                       SplitNum+1>,
@@ -326,7 +350,7 @@ qr(const TensorType& tensor,
   // 开始分了, 记录总size, shape和leg， 注意方向和svd不同
   for(auto i=0;i<Rank;i++)
   {
-    if(not_found(tensor.leg_info[i], legs))
+    if(__not_found(tensor.leg_info[i], legs))
     {
       // 放右边
       right_size *= tensor.dimension(i);
@@ -378,7 +402,7 @@ qr(const TensorType& tensor,
   // leg处理一下
   Q.leg_info = left_new_leg;
   R.leg_info = right_new_leg;
-  return qr_res<Eigen::Tensor<Scalar, LeftRank+1>,
+  return __qr_res<Eigen::Tensor<Scalar, LeftRank+1>,
                     Eigen::Tensor<Scalar, RightRank+1>> {Q, R};
 }
 
@@ -400,7 +424,7 @@ transpose(const TensorType& tensor,
   for(auto i=0;i<Rank;i++)
   {
     // 在原来的leg中一个一个找新的leg
-    to_shuffle[i] = get_index(new_legs[i], tensor.leg_info);
+    to_shuffle[i] = __get_index(new_legs[i], tensor.leg_info);
   }
   //然后就可以转置并设置新的leg了
   auto res = tensor.shuffle(to_shuffle);
@@ -422,7 +446,7 @@ multiple(const TensorType& tensor,
   typedef typename TensorType::Index Index;
   typedef typename TensorType::Scalar Scalar;
   static const std::size_t Rank = TensorType::NumDimensions;
-  auto index = get_index(leg, tensor.leg_info);
+  auto index = __get_index(leg, tensor.leg_info);
   // 分别创建to_reshape和to_bcast，然后直接cwise乘起来
   Eigen::array<Index, Rank> to_reshape; // {1,1,1,1,n,1,1,1,1}
   std::fill(to_reshape.begin(), to_reshape.end(), 1);
@@ -460,17 +484,9 @@ normalize(TensorType& tensor)
   return tensor/norm;
 }
 
-#undef get_index
-#undef not_found
-#undef find_in
-
-template<typename Base>
-Eigen::Tensor<Base, 0> ITensor()
-{
-  Eigen::Tensor<Base, 0> res;
-  res.setValues(Base(1));
-  return res;
-}
+//#undef get_index
+//#undef not_found
+//#undef find_in
 
 } // namespace Node
 
@@ -492,4 +508,4 @@ using Leg = Node::Leg;
 // macro debug_tensor
 // Leg as using and its var as static var
 
-#endif
+#endif //EIGEN_NODE_HPP
