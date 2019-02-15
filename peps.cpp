@@ -25,16 +25,18 @@ int main(int argc, char **argv)
 {
     args::ArgumentParser parser("This is a test program.", "This goes after the options.");
     args::HelpFlag help(parser, "help", "Display this help menu", {'h', "help"});
-    args::ValueFlag<int> M(parser, "M", "system size m", {'M',"size-m"});
-    args::ValueFlag<int> N(parser, "N", "system size n", {'N',"size-n"});
-    args::ValueFlag<int> D(parser, "D", "bond dimension", {'d',"dim"});
-    args::ValueFlag<int> D_cut(parser, "D_cut", "dimension cut in MPO", {'D',"dim-cut"});
-    args::ValueFlag<int> scan(parser, "SCAN_TIME", "scan time in MPO", {'s',"scan-time"});
-    args::ValueFlag<int> markov(parser, "MARKOV_LENGTH", "markov chain length", {'m',"markov"});
-    args::ValueFlag<double> step(parser, "STEP_SIZE", "step size in SU or GM", {'l',"step-size"});
-    args::ValueFlag<std::string> load(parser, "LOAD_FROM", "load from file", {'f',"load-from"});
-    args::ValueFlag<std::string> save(parser, "SAVE_PREFIX", "prefix for saving data", {'p',"save-prefix"});
-    args::Flag continue_run(parser, "", "continue run", {'c', "continue"});
+    args::Group runGM(parser, "runGM system parameter", args::Group::Validators::AllOrNone);
+    args::ValueFlag<int> M(runGM, "M", "system size m", {'M',"size-m"});
+    args::ValueFlag<int> N(runGM, "N", "system size n", {'N',"size-n"});
+    args::ValueFlag<int> D(runGM, "D", "bond dimension", {'d',"dim"});
+    args::ValueFlag<int> D_cut(runGM, "D_cut", "dimension cut in MPO", {'D',"dim-cut"});
+    args::ValueFlag<int> scan(runGM, "SCAN_TIME", "scan time in MPO", {'s',"scan-time"});
+    args::ValueFlag<int> markov(runGM, "MARKOV_LENGTH", "markov chain length", {'m',"markov"});
+    args::ValueFlag<double> step(runGM, "STEP_SIZE", "step size in SU or GM", {'l',"step-size"});
+    args::ValueFlag<std::string> save(parser, "SAVE_PREFIX", "prefix for saving data", {'p',"save-prefix"}, "run", false);
+    args::Group continue_or_from(parser, "continue or load from file", args::Group::Validators::AtMostOne);
+    args::ValueFlag<std::string> load(continue_or_from, "LOAD_FROM", "load from file", {'f',"load-from"});
+    args::Flag continue_run(continue_or_from, "", "continue run", {'c', "continue"});
     try
     {
         parser.ParseCLI(argc, argv);
@@ -56,7 +58,6 @@ int main(int argc, char **argv)
         std::cerr << parser;
         return 1;
     }
-    if (M) { std::cout << "M: " << args::get(M) << std::endl; }
-    if (N) { std::cout << "N: " << args::get(N) << std::endl; }
+    std::cout << "save-prefix: " << args::get(save) << std::endl;
     return 0;
 }
