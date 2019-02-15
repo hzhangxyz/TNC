@@ -4,14 +4,22 @@
 template<typename Base = double>
 class PEPS
 {
-    int N = 4;
-    int M = 4;
-    int D = 4;
-    int Dphy = 2;
+  public:
+    int M;
+    int N;
+    int D;
+    int D_c;
+    int scan;
+    int markov;
+    int step;
+    std::string save_prefix;
+    std::string load_from;
 
+    int Dphy = 2;
     std::vector<std::vector<Eigen::Tensor<Base, 5>>> lattice;
 
-    PEPS(int _N, int _M) : N(_N), M(_M)
+    PEPS(int _M, int _N, int _D, int _D_c, int _scan, int _markov, double _step, std::string _save, std::string _load)
+    : M(_M), N(_N), D(_D), D_c(_D_c), scan(_scan), markov(_markov), step(_step), save_prefix(_save), load_from(_load)
     {
         lattice = std::vector<std::vector<Eigen::Tensor<Base, 5>>>(N,
             std::vector<Eigen::Tensor<Base, 5>>(M,
@@ -29,7 +37,7 @@ int main(int argc, char **argv)
     args::ValueFlag<int> M(runGM, "M", "system size m", {'M',"size-m"});
     args::ValueFlag<int> N(runGM, "N", "system size n", {'N',"size-n"});
     args::ValueFlag<int> D(runGM, "D", "bond dimension", {'d',"dim"});
-    args::ValueFlag<int> D_cut(runGM, "D_cut", "dimension cut in MPO", {'D',"dim-cut"});
+    args::ValueFlag<int> D_c(runGM, "D_cut", "dimension cut in MPO", {'D',"dim-cut"});
     args::ValueFlag<int> scan(runGM, "SCAN_TIME", "scan time in MPO", {'s',"scan-time"});
     args::ValueFlag<int> markov(runGM, "MARKOV_LENGTH", "markov chain length", {'m',"markov"});
     args::ValueFlag<double> step(runGM, "STEP_SIZE", "step size in SU or GM", {'l',"step-size"});
@@ -59,5 +67,34 @@ int main(int argc, char **argv)
         return 1;
     }
     std::cout << "save-prefix: " << args::get(save) << std::endl;
+    if (runGM)
+    {
+        std::string load_from = "";
+        if (continue_run)
+        {
+            load_from = args::get(save) + "/last/last.save";
+        }
+        if (load)
+        {
+            load_from = args::get(load);
+        }
+        PEPS<> lattice
+        {
+            args::get(M),
+            args::get(N),
+            args::get(D),
+            args::get(D_c),
+            args::get(scan),
+            args::get(markov),
+            args::get(step),
+            args::get(save),
+            load_from
+        };
+    }
+    else
+    {
+        std::cout << parser;
+    }
+
     return 0;
 }
