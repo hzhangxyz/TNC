@@ -3,7 +3,6 @@
 #include <iostream>
 #include <tuple>
 #include <array>
-#include <vector>
 #include <map>
 #include <string>
 #include <algorithm>
@@ -66,7 +65,7 @@ OOO
 | |
 3 4
 */
-} // namespace Node
+}  // namespace Node
 
 /* 设置好Leg那些东西后,载入Eigen，注意Eigen内部实际上也是做了一些变化的 */
 // 可能需要mkl blas那些东西
@@ -391,7 +390,7 @@ qr(const TensorType& tensor,
   Eigen::HouseholderQR<Eigen::Ref<MatrixS>> qr(matrix);
   // 再把矩阵变回tensor, R先不malloc，因为可能不需要
   Eigen::Tensor<Scalar, LeftRank+1> Q(left_new_shape);
-  Eigen::Tensor<Scalar, RightRank+1> R; // (right_new_shape);
+  Eigen::Tensor<Scalar, RightRank+1> R;  // (right_new_shape);
   // 创建matrix map， 然后Q使用eigen的函数乘上identity，R使用matrixQR再删掉一些东西
   Eigen::Map<MatrixS> matrixQ(Q.data(), left_size, min_size);
   matrixQ = qr.householderQ() * MatrixS::Identity(left_size, min_size);
@@ -458,7 +457,7 @@ multiple(const TensorType& tensor,
   static const std::size_t Rank = TensorType::NumDimensions;
   auto index = __get_index(leg, tensor.leg_info);
   // 分别创建to_reshape和to_bcast，然后直接cwise乘起来
-  Eigen::array<Index, Rank> to_reshape; // {1,1,1,1,n,1,1,1,1}
+  Eigen::array<Index, Rank> to_reshape;  // {1,1,1,1,n,1,1,1,1}
   std::fill(to_reshape.begin(), to_reshape.end(), 1);
   to_reshape[index] = tensor.dimension(index);
   // reshape 后的bcast方式
@@ -498,7 +497,7 @@ normalize(const TensorType& tensor)
 // #undef not_found
 // #undef find_in
 
-} // namespace Node
+}  // namespace Node
 
 #define DefineLeg(x) static Node::Leg x = Node::Leg::x
 #define DefineLegs(n) DefineLeg(Left##n); DefineLeg(Right##n); DefineLeg(Up##n); DefineLeg(Down##n); DefineLeg(Phy##n)
@@ -518,4 +517,4 @@ DefineLegs(4);
 // macro debug_tensor
 // Leg's var
 
-#endif // EIGEN_NODE_HPP_
+#endif  // EIGEN_NODE_HPP_

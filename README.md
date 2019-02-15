@@ -7,6 +7,7 @@
 ## Eigen_Node接口
 - leg的维护需要手动对各种op做wrap，所以除非在外面设定`leg_info`，只能使用plugin中的几个函数
 - scalar在里面实现, 可以直接用cwise操作
+- leg_rename在里面实现的
 
 ### 外部操作
 - contract
