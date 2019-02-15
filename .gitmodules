@@ -1,6 +1,6 @@
 [submodule "eigen-git-mirror"]
 	path = eigen-git-mirror
 	url = https://github.com/eigenteam/eigen-git-mirror.git
-[submodule "cxxopts"]
-	path = cxxopts
-	url = https://github.com/jarro2783/cxxopts.git
+[submodule "args"]
+	path = args
+	url = https://github.com/Taywee/args.git
