@@ -71,10 +71,10 @@ index 17cee495f..da815b02e 100644
      }
  
 diff --git a/unsupported/Eigen/CXX11/src/Tensor/TensorBase.h b/unsupported/Eigen/CXX11/src/Tensor/TensorBase.h
-index 7d9afa685..760ef817c 100644
+index dd008fe05..8fb49a49f 100644
 --- a/unsupported/Eigen/CXX11/src/Tensor/TensorBase.h
 +++ b/unsupported/Eigen/CXX11/src/Tensor/TensorBase.h
-@@ -873,6 +873,22 @@ class TensorBase<Derived, ReadOnlyAccessors>
+@@ -878,6 +878,22 @@ class TensorBase<Derived, ReadOnlyAccessors>
        return TensorForcedEvalOp<const Derived>(derived());
      }
  

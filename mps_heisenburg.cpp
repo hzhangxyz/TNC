@@ -28,7 +28,7 @@ struct MPS
         {
             hamiltonian_data = (Base*)default_hamiltonian_data;
         }
-        
+
         Hamiltonian = Eigen::TensorMap<Eigen::Tensor<Base, 4>> {
             (Base *)hamiltonian_data,
             {Dphy, Dphy, Dphy, Dphy}
