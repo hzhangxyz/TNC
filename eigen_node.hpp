@@ -146,8 +146,8 @@ contract(const TensorType1& tensor1,
          const TensorType2& tensor2,
          const Eigen::array<Leg, ContractNum>& leg1,
          const Eigen::array<Leg, ContractNum>& leg2,
-         std::map<Leg, Leg> map1 = {},
-         std::map<Leg, Leg> map2 = {})
+         const std::map<Leg, Leg>& map1 = {},
+         const std::map<Leg, Leg>& map2 = {})
 {
   // 构造给eigen用的缩并脚标对
   // typedef Eigen::internal::traits<TensorType1> Traits;
