@@ -81,7 +81,7 @@ index dd008fe05..689a7bbf0 100644
 +    #ifdef EIGEN_NODE_HPP_
 +    Eigen::array<Node::Leg, DerivedTraits::NumDimensions> leg_info = Node::DefaultLeg<DerivedTraits::NumDimensions>::value;
 +
-+    void leg_rename(std::map<Node::Leg, Node::Leg> dict)
++    void leg_rename(const std::map<Node::Leg, Node::Leg>& dict)
 +    {
 +      for(Node::Leg& i : this->leg_info)
 +      {
