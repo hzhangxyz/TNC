@@ -26,6 +26,8 @@ class PEPS
                 Eigen::Tensor<Base, 5>{}
             )
         );
+        std::cout << load_from.empty() << "\n";
+        std::cout << load_from << "\n";
     }
 };
 
@@ -66,7 +68,6 @@ int main(int argc, char **argv)
         std::cerr << parser;
         return 1;
     }
-    std::cout << "save-prefix: " << args::get(save) << std::endl;
     if (runGM)
     {
         std::string load_from = "";
