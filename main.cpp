@@ -148,6 +148,15 @@ void test_multiple(){
   assert(A.leg_info[3]==C.leg_info[3]);
 }
 
+void test_rename(){
+  Eigen::Tensor<float, 4> A(2,3,4,5);
+  A.leg_rename({{Phy1, Left1}, {Phy2, Phy1}, {Phy4, Right4}, {Phy3, Phy2}});
+  assert(A.leg_info[0]==Left1);
+  assert(A.leg_info[1]==Phy1);
+  assert(A.leg_info[2]==Phy2);
+  assert(A.leg_info[3]==Right4);
+}
+
 int main(){
   test_copy_and_leg_info();
   test_contract();
@@ -156,5 +165,6 @@ int main(){
   test_scalar();
   test_transpose();
   test_multiple();
+  test_rename();
   return 0;
 }
