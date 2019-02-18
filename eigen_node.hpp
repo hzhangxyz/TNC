@@ -23,7 +23,7 @@ enum class Leg
 };
 
 // ostream重载，使用一个static map来完成
-std::ostream& operator<<(std::ostream& out, const Leg value)
+std::ostream& operator<<(std::ostream& out, const Leg& value)
 {
   static std::map<Leg, std::string> strings;
   if (strings.size() == 0)
