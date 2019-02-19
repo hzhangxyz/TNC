@@ -134,6 +134,23 @@ inline int __get_index(const T& it, const ContainerType& pool)
 }
 // #define get_index(it, pool) std::distance((pool).begin(), find_in(it, pool))
 
+template<typename A, typename B, typename C, typename D, typename E>
+inline void __check_in_and_map(const A& it, const B& leg, const C& map, D& res, E& i)
+{
+  if (__not_found(it, leg))
+  {
+    auto l = map.find(it);
+    if (l == map.end())
+    {
+      res.leg_info[i++] = it;
+    }
+    else
+    {
+      res.leg_info[i++] = l->second;
+    }
+  }
+}
+
 // 好，这是contract，第一个参数是缩并脚标的类型，index类型使用了第一个tensor的trait
 // 不返回op了,直接返回eval后的东西
 // 注意contract num在最前面,为了partial deduction
@@ -166,30 +183,16 @@ contract(const TensorType1& tensor1,
   // 创建新的tensor的leg
   auto i = 0;
   // 根据是否在leg内，是否map，来更新result的leg info, 两部分一样，所以写成个宏
-  #define check_in_and_map(it, leg, map) {\
-    if (__not_found(it, leg))\
-    {\
-      auto l = map.find(it);\
-      if (l == map.end())\
-      {\
-        res.leg_info[i++] = it;\
-      }\
-      else\
-      {\
-        res.leg_info[i++] = l->second;\
-      }\
-    }\
-  }
+  // 改成函数了
   // 对于两个tensor之前的每个leg， 不在legs里则加入res，但如果还在map里需要先map
   for (auto j = 0; j < tensor1.leg_info.size(); j++)
   {
-    check_in_and_map(tensor1.leg_info[j], leg1, map1);
+    __check_in_and_map(tensor1.leg_info[j], leg1, map1, res, i);
   }
   for (auto j = 0; j < tensor2.leg_info.size(); j++)
   {
-    check_in_and_map(tensor2.leg_info[j], leg2, map2);
+    __check_in_and_map(tensor2.leg_info[j], leg2, map2, res, i);
   }
-  #undef check_in_and_map
   return res;
 }
 
