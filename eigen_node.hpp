@@ -14,33 +14,21 @@ namespace Node
 enum class Leg
 {
   #define CreateLeg(x) Left##x, Right##x, Up##x, Down##x, Phy##x
-  CreateLeg(),
-  CreateLeg(1),
-  CreateLeg(2),
-  CreateLeg(3),
-  CreateLeg(4)
+  CreateLeg(), CreateLeg(1), CreateLeg(2), CreateLeg(3), CreateLeg(4)
   #undef CreateLeg
 };
 
+#define IncEnum(p) {Leg::p, #p}
+#define IncGroup(x) IncEnum(Left##x), IncEnum(Right##x), IncEnum(Up##x), IncEnum(Down##x), IncEnum(Phy##x)
+static std::map<Leg, std::string> __leg_str = {IncGroup(), IncGroup(1), IncGroup(2), IncGroup(3), IncGroup(4)};
+// 如果const的话会报[]没有mark as const的错误
+#undef IncGroup
+#undef IncEnum
+
 // ostream重载，使用一个static map来完成
-std::ostream& operator<<(std::ostream& out, const Leg& value)
+inline std::ostream& operator<<(std::ostream& out, const Leg& value)
 {
-  static std::map<Leg, std::string> strings;
-  if (strings.size() == 0)
-  {
-    // 5x5的macro repeat
-    #define IncEnum(p) strings[Leg::p] = #p
-    #define IncGroup(x) IncEnum(Left##x); IncEnum(Right##x); IncEnum(Up##x); IncEnum(Down##x); IncEnum(Phy##x)
-    IncGroup();
-    IncGroup(1);
-    IncGroup(2);
-    IncGroup(3);
-    IncGroup(4);
-    #undef IncGroup
-    #undef IncEnum
-  }
-  // 好可以输出了
-  return out << strings[value];
+  return out << __leg_str[value];
 }
 
 /* 设置默认Leg */
