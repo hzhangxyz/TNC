@@ -90,7 +90,7 @@ void __debug_tensor(const TensorType& x, const char* name, std::ostream& os)
   os << "], size=" << x.size();
   if (x.size() < 500)
   {
-    os << ", data=\n" << x << " }\n";
+    os << ", data=" << std::endl << x << " }" << std::endl;
   }
   else
   {
@@ -173,9 +173,6 @@ contract(const TensorType1& tensor1,
   for (auto i = 0; i < ContractNum; i++)
   {
     dims[i].first = __get_index(leg1[i], tensor1.leg_info);
-  }
-  for (auto i =0; i < ContractNum; i++)
-  {
     dims[i].second = __get_index(leg2[i], tensor2.leg_info);
   }
   // 然后运行，注意这里的auto返回的是一个op，是lazy的
