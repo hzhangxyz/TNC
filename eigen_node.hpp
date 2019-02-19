@@ -215,6 +215,12 @@ class __svd_res : public std::tuple<T1, T2, T3>
   }
 };
 
+template<typename SrcType, typename DstType>
+inline void __copy_data(const SrcType& src, DstType& dst)
+{
+  std::copy(src.data(), src.data()+dst.size(), dst.data());
+}
+
 /* svd */
 // svd返回的是含有U,S,V的一个tuple
 template<std::size_t SplitNum, typename TensorType>
@@ -280,7 +286,8 @@ svd(const TensorType& tensor,
   // 然后把最后一个脚加上去
   left_new_leg[left_index] = new_leg1;
   right_new_leg[right_index] = new_leg2;
-  left_new_shape[left_index] = right_new_shape[right_index] = min_size;
+  left_new_shape[left_index] = min_size;
+  right_new_shape[right_index] = min_size;
   // shuffle并reshape，当作matrix然后就可以svd了
   auto shuffled = tensor.shuffle(to_shuffle);
   Eigen::Tensor<Scalar, 2> reshaped = shuffled.reshape(Eigen::array<Index, 2>{left_size, right_size});
@@ -292,11 +299,11 @@ svd(const TensorType& tensor,
   Eigen::Tensor<Scalar, 1> S(Eigen::array<Index, 1>{min_size});
   Eigen::Tensor<Scalar, RightRank+1> V(right_new_shape);
   // 注意,这里的截断使用了列优先的性质,需要截断的那个脚是在最后面的
-  #define copy_data(src, dst) std::copy(src.data(), src.data()+dst.size(), dst.data())
-  copy_data(svd.matrixU(), U);
-  copy_data(svd.singularValues(), S);
-  copy_data(svd.matrixV(), V);
-  #undef copy_data
+  //#define copy_data(src, dst) std::copy(src.data(), src.data()+dst.size(), dst.data())
+  __copy_data(svd.matrixU(), U);
+  __copy_data(svd.singularValues(), S);
+  __copy_data(svd.matrixV(), V);
+  //#undef copy_data
   U.leg_info = left_new_leg;
   if (new_leg1 == new_leg2)
   {
