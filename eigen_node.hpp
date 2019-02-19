@@ -113,7 +113,7 @@ inline auto find_in(const T& it, const ContainerType& pool)
 } */
 
 template<typename ContainerType, typename T>
-inline typename ContainerType::const_iterator
+EIGEN_DEVICE_FUNC inline typename ContainerType::const_iterator
 __find_in(const T& it, const ContainerType& pool)
 {
   return std::find(pool.begin(), pool.end(), it);
@@ -121,21 +121,21 @@ __find_in(const T& it, const ContainerType& pool)
 // #define find_in(it, pool) std::find((pool).begin(), (pool).end(), it)
 
 template<typename ContainerType, typename T>
-inline bool __not_found(const T& it, const ContainerType& pool)
+EIGEN_DEVICE_FUNC inline bool __not_found(const T& it, const ContainerType& pool)
 {
   return __find_in(it, pool) == pool.end();
 }
 // #define not_found(it, pool) find_in(it, pool) == (pool).end()
 
 template<typename ContainerType, typename T>
-inline int __get_index(const T& it, const ContainerType& pool)
+EIGEN_DEVICE_FUNC inline int __get_index(const T& it, const ContainerType& pool)
 {
   return std::distance(pool.begin(), __find_in(it, pool));
 }
 // #define get_index(it, pool) std::distance((pool).begin(), find_in(it, pool))
 
 template<typename A, typename B, typename C, typename D, typename E>
-inline void __check_in_and_map(const A& it, const B& leg, const C& map, D& res, E& i)
+EIGEN_DEVICE_FUNC inline void __check_in_and_map(const A& it, const B& leg, const C& map, D& res, E& i)
 {
   if (__not_found(it, leg))
   {
@@ -216,7 +216,7 @@ class __svd_res : public std::tuple<T1, T2, T3>
 };
 
 template<typename SrcType, typename DstType>
-inline void __copy_data(const SrcType& src, DstType& dst)
+EIGEN_DEVICE_FUNC inline void __copy_data(const SrcType& src, DstType& dst)
 {
   std::copy(src.data(), src.data()+dst.size(), dst.data());
 }
