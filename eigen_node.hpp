@@ -272,9 +272,9 @@ namespace Node
     // shuffle并reshape，当作matrix然后就可以svd了
     auto shuffled = tensor.shuffle(to_shuffle);
     Eigen::Tensor<Scalar, 2> reshaped = shuffled.reshape(Eigen::array<Index, 2>{left_size, right_size});
-    Eigen::Map<MatrixS> matrix(reshaped.data(), left_size, right_size);
+    Eigen::Map<MatrixS> matrix {reshaped.data(), left_size, right_size};
     // Eigen::JacobiSVD<MatrixS, Eigen::HouseholderQRPreconditioner> svd(matrix, Eigen::ComputeThinU | Eigen::ComputeThinV);
-    Eigen::BDCSVD<MatrixS> svd(matrix, Eigen::ComputeThinU | Eigen::ComputeThinV);
+    Eigen::BDCSVD<MatrixS> svd {matrix, Eigen::ComputeThinU | Eigen::ComputeThinV};
     // 再把矩阵变回tensor
     using UType = Eigen::Tensor<Scalar, LeftRank+1>;
     using SType = Eigen::Tensor<Scalar, 1>;
@@ -292,7 +292,7 @@ namespace Node
     res.U().leg_info = std::move(left_new_leg);
     if (new_leg1 == new_leg2)
     {
-      res.S().leg_info = Eigen::array<Leg, 1>{new_leg1};
+      res.S().leg_info = Eigen::array<Leg, 1> {new_leg1};
     }
     res.V().leg_info = std::move(right_new_leg);
     return res;
@@ -376,22 +376,22 @@ namespace Node
     // shuffle并reshape，当作matrix然后就可以分解了
     auto shuffled = tensor.shuffle(to_shuffle);
     Eigen::Tensor<Scalar, 2> reshaped = shuffled.reshape(Eigen::array<Index, 2>{left_size, right_size});
-    Eigen::Map<MatrixS> matrix(reshaped.data(), left_size, right_size);
+    Eigen::Map<MatrixS> matrix {reshaped.data(), left_size, right_size};
     // 调用householder QR
-    Eigen::HouseholderQR<Eigen::Ref<MatrixS>> qr(matrix);
+    Eigen::HouseholderQR<Eigen::Ref<MatrixS>> qr {matrix};
     // 再把矩阵变回tensor, R先不malloc，因为可能不需要
     using QType = Eigen::Tensor<Scalar, LeftRank+1>;
     using RType = Eigen::Tensor<Scalar, RightRank+1>;
     internal::qr_res<QType, RType> res;
     res.Q() = QType {std::move(left_new_shape)};
     // 创建matrix map， 然后Q使用eigen的函数乘上identity，R使用matrixQR再删掉一些东西
-    Eigen::Map<MatrixS> matrixQ(res.Q().data(), left_size, min_size);
+    Eigen::Map<MatrixS> matrixQ {res.Q().data(), left_size, min_size};
     matrixQ = qr.householderQ() * MatrixS::Identity(left_size, min_size);
     if (computeR)
     {
       // 如果设置了computeR（默认true），那么算一下R矩阵
       res.R() = RType {std::move(right_new_shape)};
-      Eigen::Map<MatrixS> matrixR(res.R().data(), min_size, right_size);
+      Eigen::Map<MatrixS> matrixR {res.R().data(), min_size, right_size};
       auto matrixQR = qr.matrixQR();
       for (auto j = 0; j < right_size; j++)
       {
