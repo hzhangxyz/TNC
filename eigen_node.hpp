@@ -118,7 +118,7 @@ namespace Node
     }
 
     template<typename TensorType>
-    EIGEN_DEVICE_FUNC inline auto to_tensor(TensorType& tensor)
+    EIGEN_DEVICE_FUNC inline auto to_tensor(const TensorType& tensor)
     {
       return Eigen::Tensor<typename TensorType::Scalar, TensorType::NumDimensions> {tensor};
     }
@@ -187,7 +187,6 @@ namespace Node
     class svd_res : public std::tuple<T1, T2, T3>
     {
     public:
-      //svd_res(T1 t1, T2 t2, T3 t3) : std::tuple<T1, T2, T3>(t1, t2, t3) {}
       svd_res() : std::tuple<T1, T2, T3>(T1 {}, T2 {}, T3 {}) {}
       inline T1& U()
       {
@@ -304,7 +303,6 @@ namespace Node
     class qr_res : public std::tuple<T1, T2>
     {
     public:
-      using QType = T1;
       qr_res() : std::tuple<T1, T2>(T1 {}, T2 {}) {}
       inline T1& Q()
       {
