@@ -72,61 +72,59 @@ namespace Node
 
 namespace Node
 {
-  // check Tensor的一个macro
-  void __debug_tensor(const auto& x, const char* name, std::ostream& os)
+  namespace internal
   {
-    os << " " << name << "= { rank=" << x.NumDimensions << " dims=[";
-    for (auto i = 0; i < x.NumDimensions; i++)
+    // check Tensor的一个macro
+    void __debug_tensor(const auto& x, const char* name, std::ostream& os)
     {
-      os << "(" << x.dimension(i) << "|" << x.leg_info[i] << "), ";
+      os << " " << name << "= { rank=" << x.NumDimensions << " dims=[";
+      for (auto i = 0; i < x.NumDimensions; i++)
+      {
+        os << "(" << x.dimension(i) << "|" << x.leg_info[i] << "), ";
+      }
+      os << "], size=" << x.size();
+      if (x.size() < 500)
+      {
+        os << ", data=" << std::endl << x << " }" << std::endl;
+      }
+      else
+      {
+        os << "}";
+      }
     }
-    os << "], size=" << x.size();
-    if (x.size() < 500)
-    {
-      os << ", data=" << std::endl << x << " }" << std::endl;
-    }
-    else
-    {
-      os << "}";
-    }
+    #define debug_tensor(x) Node::internal::debug_tensor(x, #x, std::clog)
   }
-  #define debug_tensor(x) Node::__debug_tensor(x, #x, std::clog)
 
   // leg name 是 Leg
   // index的序号是 Index
   // rank 是 std::size_t
   // dimension, size 是 Index
 
-  /* contraction */
-  // 定义三个index用的macro，这样方便，写函数的话vector和map的格式都不一样，这里类型检查看起来也没比宏强多少
   namespace internal
   {
-    EIGEN_DEVICE_FUNC inline auto
-    find_in(const auto& it, const auto& pool)
+    EIGEN_DEVICE_FUNC inline auto find_in(const auto& it, const auto& pool)
     {
       return std::find(pool.begin(), pool.end(), it);
     }
 
-    EIGEN_DEVICE_FUNC inline bool
-    not_found(const auto& it, const auto& pool)
+    EIGEN_DEVICE_FUNC inline bool not_found(const auto& it, const auto& pool)
     {
       return find_in(it, pool) == pool.end();
     }
 
-    EIGEN_DEVICE_FUNC inline int
-    get_index(const auto& it, const auto& pool)
+    EIGEN_DEVICE_FUNC inline int get_index(const auto& it, const auto& pool)
     {
       return std::distance(pool.begin(), find_in(it, pool));
     }
 
     template<typename TensorType>
-    EIGEN_DEVICE_FUNC inline auto
-    to_tensor(TensorType& tensor)
+    EIGEN_DEVICE_FUNC inline auto to_tensor(TensorType& tensor)
     {
       return Eigen::Tensor<typename TensorType::Scalar, TensorType::NumDimensions> {tensor};
     }
 
-    EIGEN_DEVICE_FUNC inline void check_in_and_map(const auto& it, const auto& leg, const auto& map, auto& res, auto& i)
+    EIGEN_DEVICE_FUNC inline void check_in_and_map
+    (const auto& it, const auto& leg, const auto& map, auto& res, auto& i)
     {
       if (not_found(it, leg))
       {
@@ -143,17 +141,18 @@ namespace Node
     }
   }
 
+  /* contraction */
   // 好，这是contract，第一个参数是缩并脚标的类型，index类型使用了第一个tensor的trait
   // 不返回op了,直接返回eval后的东西
   // 注意contract num在最前面,为了partial deduction
   template<std::size_t ContractNum, typename TensorType1, typename TensorType2>
-  EIGEN_DEVICE_FUNC auto
-  contract(const TensorType1& tensor1,
-          const TensorType2& tensor2,
-          const Eigen::array<Leg, ContractNum>& leg1,
-          const Eigen::array<Leg, ContractNum>& leg2,
-          const std::map<Leg, Leg>& map1 = {},
-          const std::map<Leg, Leg>& map2 = {})
+  EIGEN_DEVICE_FUNC auto contract
+  (const TensorType1& tensor1,
+   const TensorType2& tensor2,
+   const Eigen::array<Leg, ContractNum>& leg1,
+   const Eigen::array<Leg, ContractNum>& leg2,
+   const std::map<Leg, Leg>& map1 = {},
+   const std::map<Leg, Leg>& map2 = {})
   {
     // 构造给eigen用的缩并脚标对
     // typedef Eigen::internal::traits<TensorType1> Traits;
@@ -212,12 +211,12 @@ namespace Node
   /* svd */
   // svd返回的是含有U,S,V的一个tuple
   template<std::size_t SplitNum, typename TensorType>
-  EIGEN_DEVICE_FUNC auto
-  svd(const TensorType& tensor,
-      const Eigen::array<Leg, SplitNum>& legs,
-      Leg new_leg1,
-      Leg new_leg2,
-      typename TensorType::Index cut = -1)
+  EIGEN_DEVICE_FUNC auto svd
+  (const TensorType& tensor,
+   const Eigen::array<Leg, SplitNum>& legs,
+   Leg new_leg1,
+   Leg new_leg2,
+   typename TensorType::Index cut = -1)
   {
     // 先各种重命名烦人的东西
     // typedef Eigen::internal::traits<TensorType> Traits;
@@ -316,12 +315,12 @@ namespace Node
   // qr外部和svd一样，里面需要处理一下
   // http://www.netlib.org/lapack/explore-html/df/dc5/group__variants_g_ecomputational_ga3766ea903391b5cf9008132f7440ec7b.html
   template<std::size_t SplitNum, typename TensorType>
-  EIGEN_DEVICE_FUNC auto
-  qr(const TensorType& tensor,
-    const Eigen::array<Leg, SplitNum>& legs,
-    Leg new_leg1,
-    Leg new_leg2,
-    bool computeR = true)
+  EIGEN_DEVICE_FUNC auto qr
+  (const TensorType& tensor,
+   const Eigen::array<Leg, SplitNum>& legs,
+   Leg new_leg1,
+   Leg new_leg2,
+   bool computeR = true)
   {
     // 先各种重命名烦人的东西
     // typedef Eigen::internal::traits<TensorType> Traits;
@@ -402,9 +401,9 @@ namespace Node
 
   /* transpose */
   template <typename TensorType>
-  EIGEN_DEVICE_FUNC auto
-  transpose(const TensorType& tensor,
-            const Eigen::array<Leg, TensorType::NumDimensions>& new_legs)
+  EIGEN_DEVICE_FUNC auto transpose
+  (const TensorType& tensor,
+   const Eigen::array<Leg, TensorType::NumDimensions>& new_legs)
   {
     // 惯例，alias各种东西
     // typedef Eigen::internal::traits<TensorType> Traits;
@@ -428,10 +427,10 @@ namespace Node
   // https://stackoverflow.com/questions/47040173/how-to-multiple-two-eigen-tensors-along-batch-dimension
 
   template <typename TensorType>
-  EIGEN_DEVICE_FUNC auto
-  multiple(const TensorType& tensor,
-          const Eigen::Tensor<typename TensorType::Scalar, 1>& vector,
-          Leg leg)
+  EIGEN_DEVICE_FUNC auto multiple
+  (const TensorType& tensor,
+   const Eigen::Tensor<typename TensorType::Scalar, 1>& vector,
+   Leg leg)
   {
     // typedef Eigen::internal::traits<TensorType> Traits;
     using Index = typename TensorType::Index;
