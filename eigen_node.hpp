@@ -94,33 +94,33 @@ void __debug_tensor(const TensorType& x, const char* name, std::ostream& os)
 
 /* contraction */
 // 定义三个index用的macro，这样方便，写函数的话vector和map的格式都不一样，这里类型检查看起来也没比宏强多少
-/* template<typename ContainerType, typename T>
-inline auto find_in(const T& it, const ContainerType& pool)
-{
-  return std::find(pool.begin(), pool.end(), it);
-} */
-
 template<typename ContainerType, typename T>
 EIGEN_DEVICE_FUNC inline auto
 __find_in(const T& it, const ContainerType& pool)
 {
   return std::find(pool.begin(), pool.end(), it);
 }
-// #define find_in(it, pool) std::find((pool).begin(), (pool).end(), it)
 
 template<typename ContainerType, typename T>
-EIGEN_DEVICE_FUNC inline bool __not_found(const T& it, const ContainerType& pool)
+EIGEN_DEVICE_FUNC inline bool
+__not_found(const T& it, const ContainerType& pool)
 {
   return __find_in(it, pool) == pool.end();
 }
-// #define not_found(it, pool) find_in(it, pool) == (pool).end()
 
 template<typename ContainerType, typename T>
-EIGEN_DEVICE_FUNC inline int __get_index(const T& it, const ContainerType& pool)
+EIGEN_DEVICE_FUNC inline int
+__get_index(const T& it, const ContainerType& pool)
 {
   return std::distance(pool.begin(), __find_in(it, pool));
 }
-// #define get_index(it, pool) std::distance((pool).begin(), find_in(it, pool))
+
+template<typename TensorType>
+EIGEN_DEVICE_FUNC inline auto
+__to_tensor(TensorType& tensor)
+{
+  return Eigen::Tensor<typename TensorType::Scalar, TensorType::NumDimensions> {tensor};
+}
 
 template<typename A, typename B, typename C, typename D, typename E>
 EIGEN_DEVICE_FUNC inline void __check_in_and_map(const A& it, const B& leg, const C& map, D& res, E& i)
@@ -143,10 +143,7 @@ EIGEN_DEVICE_FUNC inline void __check_in_and_map(const A& it, const B& leg, cons
 // 不返回op了,直接返回eval后的东西
 // 注意contract num在最前面,为了partial deduction
 template<std::size_t ContractNum, typename TensorType1, typename TensorType2>
-EIGEN_DEVICE_FUNC auto/*Eigen::Tensor<
-                    typename TensorType1::Scalar,
-                    TensorType1::NumDimensions + TensorType2::NumDimensions -
-                      2*ContractNum>*/
+EIGEN_DEVICE_FUNC auto
 contract(const TensorType1& tensor1,
          const TensorType2& tensor2,
          const Eigen::array<Leg, ContractNum>& leg1,
@@ -164,9 +161,7 @@ contract(const TensorType1& tensor1,
     dims[i].second = __get_index(leg2[i], tensor2.leg_info);
   }
   // 然后运行，注意这里的auto返回的是一个op，是lazy的
-  auto op = tensor1.contract(tensor2, dims);
-  typedef decltype(op) OpType;
-  Eigen::Tensor<typename OpType::Scalar, OpType::NumDimensions> res = op;
+  auto res = tensor1.contract(tensor2, dims);
   // 创建新的tensor的leg
   auto i = 0;
   // 根据是否在leg内，是否map，来更新result的leg info, 两部分一样，所以写成个宏
@@ -180,7 +175,7 @@ contract(const TensorType1& tensor1,
   {
     __check_in_and_map(tensor2.leg_info[j], leg2, map2, res, i);
   }
-  return res;
+  return __to_tensor(res);
 }
 
 template<typename T1, typename T2, typename T3>
@@ -211,14 +206,7 @@ EIGEN_DEVICE_FUNC inline void __copy_data(const SrcType& src, DstType& dst)
 /* svd */
 // svd返回的是含有U,S,V的一个tuple
 template<std::size_t SplitNum, typename TensorType>
-EIGEN_DEVICE_FUNC __svd_res<
-                    Eigen::Tensor<
-                      typename TensorType::Scalar,
-                      SplitNum+1>,
-                    Eigen::Tensor<typename TensorType::Scalar, 1>,
-                    Eigen::Tensor<
-                      typename TensorType::Scalar,
-                      TensorType::NumDimensions-SplitNum+1>>
+EIGEN_DEVICE_FUNC auto
 svd(const TensorType& tensor,
     const Eigen::array<Leg, SplitNum>& legs,
     Leg new_leg1,
@@ -321,13 +309,7 @@ class __qr_res : public std::tuple<T1, T2>
 // qr外部和svd一样，里面需要处理一下
 // http://www.netlib.org/lapack/explore-html/df/dc5/group__variants_g_ecomputational_ga3766ea903391b5cf9008132f7440ec7b.html
 template<std::size_t SplitNum, typename TensorType>
-EIGEN_DEVICE_FUNC __qr_res<
-                    Eigen::Tensor<
-                      typename TensorType::Scalar,
-                      SplitNum+1>,
-                    Eigen::Tensor<
-                      typename TensorType::Scalar,
-                      TensorType::NumDimensions-SplitNum+1>>
+EIGEN_DEVICE_FUNC auto
 qr(const TensorType& tensor,
    const Eigen::array<Leg, SplitNum>& legs,
    Leg new_leg1,
@@ -414,9 +396,7 @@ qr(const TensorType& tensor,
 
 /* transpose */
 template <typename TensorType>
-EIGEN_DEVICE_FUNC Eigen::Tensor<
-                    typename TensorType::Scalar,
-                    TensorType::NumDimensions>
+EIGEN_DEVICE_FUNC auto
 transpose(const TensorType& tensor,
           const Eigen::array<Leg, TensorType::NumDimensions>& new_legs)
 {
@@ -435,15 +415,13 @@ transpose(const TensorType& tensor,
   // 然后就可以转置并设置新的leg了
   auto res = tensor.shuffle(to_shuffle);
   res.leg_info = new_legs;
-  return res;
+  return __to_tensor(res);
 }
 
 /* multiple */
 // https://stackoverflow.com/questions/47040173/how-to-multiple-two-eigen-tensors-along-batch-dimension
 template <typename TensorType>
-EIGEN_DEVICE_FUNC Eigen::Tensor<
-                    typename TensorType::Scalar,
-                    TensorType::NumDimensions>
+EIGEN_DEVICE_FUNC auto
 multiple(const TensorType& tensor,
          const Eigen::Tensor<typename TensorType::Scalar, 1>& vector,
          Leg leg)
@@ -465,34 +443,26 @@ multiple(const TensorType& tensor,
   }
   to_bcast[index] = 1;
   // 注意cwise乘积顺序, leg是根据左边那个来的
-  return tensor * vector.reshape(to_reshape).broadcast(to_bcast);
+  return __to_tensor(tensor * vector.reshape(to_reshape).broadcast(to_bcast));
 }
 
 template <typename TensorType>
-EIGEN_DEVICE_FUNC Eigen::Tensor<
-                    typename TensorType::Scalar,
-                    TensorType::NumDimensions>
+EIGEN_DEVICE_FUNC auto
 max_normalize(const TensorType& tensor)
 {
   typedef typename TensorType::Scalar Scalar;
   Scalar norm = Eigen::Tensor<Scalar, 0>(tensor.abs().maximum())();
-  return tensor/norm;
+  return __to_tensor(tensor/norm);
 }
 
 template <typename TensorType>
-EIGEN_DEVICE_FUNC Eigen::Tensor<
-                    typename TensorType::Scalar,
-                    TensorType::NumDimensions>
+EIGEN_DEVICE_FUNC auto
 normalize(const TensorType& tensor)
 {
   typedef typename TensorType::Scalar Scalar;
   Scalar norm = Eigen::Tensor<Scalar, 0>(tensor.square().sum())();
-  return tensor/norm;
+  return __to_tensor(tensor/norm);
 }
-
-// #undef get_index
-// #undef not_found
-// #undef find_in
 
 }  // namespace Node
 
