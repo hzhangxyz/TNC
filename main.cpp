@@ -37,7 +37,9 @@ void test_contract(){
   assert(AB.leg_info[1]==Phy3);
   assert(AB.leg_info[2]==Right2);
   assert(AB.leg_info[3]==Phy4);
-  assert(A(2,0,1)*B(0,1,0)+A(2,1,1)*B(1,1,0)+A(2,2,1)*B(2,1,0)+A(2,3,1)*B(3,1,0)==AB(2,1,1,0));
+  auto a = A(2,0,1)*B(0,1,0)+A(2,1,1)*B(1,1,0)+A(2,2,1)*B(2,1,0)+A(2,3,1)*B(3,1,0);
+  auto b = AB(2,1,1,0);
+  assert(abs(a-b)<1e-5);
 }
 
 void test_svd(){
