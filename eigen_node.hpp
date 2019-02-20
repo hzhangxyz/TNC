@@ -187,7 +187,8 @@ namespace Node
     class svd_res : public std::tuple<T1, T2, T3>
     {
     public:
-      svd_res(T1 t1, T2 t2, T3 t3) : std::tuple<T1, T2, T3>(t1, t2, t3) {}
+      //svd_res(T1 t1, T2 t2, T3 t3) : std::tuple<T1, T2, T3>(t1, t2, t3) {}
+      svd_res() : std::tuple<T1, T2, T3>(T1 {}, T2 {}, T3 {}) {}
       inline T1& U()
       {
         return std::get<0>(*this);
@@ -275,22 +276,26 @@ namespace Node
     // Eigen::JacobiSVD<MatrixS, Eigen::HouseholderQRPreconditioner> svd(matrix, Eigen::ComputeThinU | Eigen::ComputeThinV);
     Eigen::BDCSVD<MatrixS> svd(matrix, Eigen::ComputeThinU | Eigen::ComputeThinV);
     // 再把矩阵变回tensor
-    Eigen::Tensor<Scalar, LeftRank+1> U(left_new_shape);
-    Eigen::Tensor<Scalar, 1> S(Eigen::array<Index, 1>{min_size});
-    Eigen::Tensor<Scalar, RightRank+1> V(right_new_shape);
+    using UType = Eigen::Tensor<Scalar, LeftRank+1>;
+    using SType = Eigen::Tensor<Scalar, 1>;
+    using VType =Eigen::Tensor<Scalar, RightRank+1>;
+    internal::svd_res<UType, SType, VType> res;
+    res.U() = UType {std::move(left_new_shape)};
+    res.S() = SType {Eigen::array<Index, 1> {min_size}};
+    res.V() = VType {std::move(right_new_shape)};
     // 注意,这里的截断使用了列优先的性质,需要截断的那个脚是在最后面的
     //#define copy_data(src, dst) std::copy(src.data(), src.data()+dst.size(), dst.data())
-    internal::copy_data(svd.matrixU(), U);
-    internal::copy_data(svd.singularValues(), S);
-    internal::copy_data(svd.matrixV(), V);
+    internal::copy_data(svd.matrixU(), res.U());
+    internal::copy_data(svd.singularValues(), res.S());
+    internal::copy_data(svd.matrixV(), res.V());
     //#undef copy_data
-    U.leg_info = left_new_leg;
+    res.U().leg_info = std::move(left_new_leg);
     if (new_leg1 == new_leg2)
     {
-      S.leg_info = Eigen::array<Leg, 1>{new_leg1};
+      res.S().leg_info = Eigen::array<Leg, 1>{new_leg1};
     }
-    V.leg_info = right_new_leg;
-    return internal::svd_res {U, S, V};
+    res.V().leg_info = std::move(right_new_leg);
+    return res;
   }
 
   namespace internal
@@ -299,7 +304,8 @@ namespace Node
     class qr_res : public std::tuple<T1, T2>
     {
     public:
-      qr_res(T1 t1, T2 t2) : std::tuple<T1, T2>(t1, t2) {}
+      using QType = T1;
+      qr_res() : std::tuple<T1, T2>(T1 {}, T2 {}) {}
       inline T1& Q()
       {
         return std::get<0>(*this);
@@ -374,16 +380,18 @@ namespace Node
     // 调用householder QR
     Eigen::HouseholderQR<Eigen::Ref<MatrixS>> qr(matrix);
     // 再把矩阵变回tensor, R先不malloc，因为可能不需要
-    Eigen::Tensor<Scalar, LeftRank+1> Q(left_new_shape);
-    Eigen::Tensor<Scalar, RightRank+1> R;  // (right_new_shape);
+    using QType = Eigen::Tensor<Scalar, LeftRank+1>;
+    using RType = Eigen::Tensor<Scalar, RightRank+1>;
+    internal::qr_res<QType, RType> res;
+    res.Q() = QType {std::move(left_new_shape)};
     // 创建matrix map， 然后Q使用eigen的函数乘上identity，R使用matrixQR再删掉一些东西
-    Eigen::Map<MatrixS> matrixQ(Q.data(), left_size, min_size);
+    Eigen::Map<MatrixS> matrixQ(res.Q().data(), left_size, min_size);
     matrixQ = qr.householderQ() * MatrixS::Identity(left_size, min_size);
     if (computeR)
     {
       // 如果设置了computeR（默认true），那么算一下R矩阵
-      R = Eigen::Tensor<Scalar, RightRank+1> (right_new_shape);
-      Eigen::Map<MatrixS> matrixR(R.data(), min_size, right_size);
+      res.R() = RType {std::move(right_new_shape)};
+      Eigen::Map<MatrixS> matrixR(res.R().data(), min_size, right_size);
       auto matrixQR = qr.matrixQR();
       for (auto j = 0; j < right_size; j++)
       {
@@ -394,9 +402,9 @@ namespace Node
       }
     }
     // leg处理一下
-    Q.leg_info = left_new_leg;
-    R.leg_info = right_new_leg;
-    return internal::qr_res {Q, R};
+    res.Q().leg_info = std::move(left_new_leg);
+    res.R().leg_info = std::move(right_new_leg);
+    return res;
   }
 
   /* transpose */
