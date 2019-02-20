@@ -37,7 +37,6 @@ template<std::size_t rank>
 struct DefaultLeg
 {
   static const std::array<Leg, rank> value;
-  // static const Leg value[rank];
 };
 // 如果是4 rank，那大概是哈密顿量，设置一下leg
 template <>
@@ -124,6 +123,8 @@ __to_tensor(TensorType& tensor)
 
 template<typename A, typename B, typename C, typename D, typename E>
 EIGEN_DEVICE_FUNC inline void __check_in_and_map(const A& it, const B& leg, const C& map, D& res, E& i)
+// EIGEN_DEVICE_FUNC inline void __check_in_and_map(const auto& it, const auto& leg, const auto& map, auto& res, auto& i)
+// c++20 concept
 {
   if (__not_found(it, leg))
   {
