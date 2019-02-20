@@ -287,8 +287,8 @@ svd(const TensorType& tensor,
   }
   V.leg_info = right_new_leg;
   return __svd_res<Eigen::Tensor<Scalar, LeftRank+1>,
-                    Eigen::Tensor<Scalar, 1>,
-                    Eigen::Tensor<Scalar, RightRank+1>> {U, S, V};
+                   Eigen::Tensor<Scalar, 1>,
+                   Eigen::Tensor<Scalar, RightRank+1>> {U, S, V};
 }
 
 template<typename T1, typename T2>
@@ -392,7 +392,7 @@ qr(const TensorType& tensor,
   Q.leg_info = left_new_leg;
   R.leg_info = right_new_leg;
   return __qr_res<Eigen::Tensor<Scalar, LeftRank+1>,
-                    Eigen::Tensor<Scalar, RightRank+1>> {Q, R};
+                  Eigen::Tensor<Scalar, RightRank+1>> {Q, R};
 }
 
 /* transpose */
