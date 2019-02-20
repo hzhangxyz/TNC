@@ -101,7 +101,7 @@ inline auto find_in(const T& it, const ContainerType& pool)
 } */
 
 template<typename ContainerType, typename T>
-EIGEN_DEVICE_FUNC inline typename ContainerType::const_iterator
+EIGEN_DEVICE_FUNC inline auto
 __find_in(const T& it, const ContainerType& pool)
 {
   return std::find(pool.begin(), pool.end(), it);
@@ -143,10 +143,10 @@ EIGEN_DEVICE_FUNC inline void __check_in_and_map(const A& it, const B& leg, cons
 // 不返回op了,直接返回eval后的东西
 // 注意contract num在最前面,为了partial deduction
 template<std::size_t ContractNum, typename TensorType1, typename TensorType2>
-EIGEN_DEVICE_FUNC Eigen::Tensor<
+EIGEN_DEVICE_FUNC auto/*Eigen::Tensor<
                     typename TensorType1::Scalar,
                     TensorType1::NumDimensions + TensorType2::NumDimensions -
-                      2*ContractNum>
+                      2*ContractNum>*/
 contract(const TensorType1& tensor1,
          const TensorType2& tensor2,
          const Eigen::array<Leg, ContractNum>& leg1,
@@ -164,7 +164,9 @@ contract(const TensorType1& tensor1,
     dims[i].second = __get_index(leg2[i], tensor2.leg_info);
   }
   // 然后运行，注意这里的auto返回的是一个op，是lazy的
-  auto res = tensor1.contract(tensor2, dims);
+  auto op = tensor1.contract(tensor2, dims);
+  typedef decltype(op) OpType;
+  Eigen::Tensor<typename OpType::Scalar, OpType::NumDimensions> res = op;
   // 创建新的tensor的leg
   auto i = 0;
   // 根据是否在leg内，是否map，来更新result的leg info, 两部分一样，所以写成个宏

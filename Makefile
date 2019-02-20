@@ -1,6 +1,6 @@
 CXX=clang++
 CXXFLAGS+= -I./eigen-git-mirror -I./eigen-git-mirror/unsupported -I./args
-CXXFLAGS+= -lblas -llapacke --std=c++11
+CXXFLAGS+= -lblas -llapacke --std=c++17
 
 DEBUG?=0
 ifeq ($(DEBUG), 0)
