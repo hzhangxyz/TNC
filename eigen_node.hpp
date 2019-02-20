@@ -34,16 +34,10 @@ inline std::ostream& operator<<(std::ostream& out, const Leg& value)
 /* 设置默认Leg */
 // 使用一个Trait来实现，TensorBase内部使用leg_info = DefaultLeg<DerivedTraits::NumDimensions>::value;来调用这里
 template<std::size_t rank>
-struct DefaultLeg
-{
-  static const std::array<Leg, rank> value;
-};
+static const std::array<Leg, rank> DefaultLeg = {};
 // 如果是4 rank，那大概是哈密顿量，设置一下leg
 template <>
-const std::array<Leg, 4> DefaultLeg<4>::value = {Leg::Phy1, Leg::Phy2, Leg::Phy3, Leg::Phy4};
-// 不然的话那就算了
-template <std::size_t other>
-const std::array<Leg, other> DefaultLeg<other>::value = {};
+const std::array<Leg, 4> DefaultLeg<4> = {Leg::Phy1, Leg::Phy2, Leg::Phy3, Leg::Phy4};
 /*
 Hamiltonian的4个脚长这个样子
 1 2
