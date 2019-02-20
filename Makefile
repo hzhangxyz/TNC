@@ -1,10 +1,12 @@
-CXX=clang++
+CXX=g++
 CXXFLAGS+= -I./eigen-git-mirror -I./eigen-git-mirror/unsupported -I./args
-CXXFLAGS+= -lblas -llapacke --std=c++17
+CXXFLAGS+= -L/opt/intel/mkl/lib/intel64 -lmkl_intel_lp64 -lmkl_core -lmkl_sequential
+CXXFLAGS+= -lpthread -lrt -DEIGEN_USE_MKL_ALL -I/opt/intel/mkl/include
+CXXFLAGS+= --std=c++17 -fconcepts
+CXXFLAGS+= -O3 -march=native -fwhole-program
 
 DEBUG?=0
 ifeq ($(DEBUG), 0)
-	CXXFLAGS+= -O3 -march=native
 else
 	CXXFLAGS+= -g
 endif

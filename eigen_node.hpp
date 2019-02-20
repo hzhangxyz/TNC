@@ -20,7 +20,7 @@ enum class Leg
 
 #define IncEnum(p) {Leg::p, #p}
 #define IncGroup(x) IncEnum(Left##x), IncEnum(Right##x), IncEnum(Up##x), IncEnum(Down##x), IncEnum(Phy##x)
-static std::map<Leg, std::string> __leg_str = {IncGroup(), IncGroup(1), IncGroup(2), IncGroup(3), IncGroup(4)};
+static const std::map<Leg, std::string> __leg_str = {IncGroup(), IncGroup(1), IncGroup(2), IncGroup(3), IncGroup(4)};
 // 如果const的话会报[]没有mark as const的错误
 #undef IncGroup
 #undef IncEnum
@@ -28,7 +28,14 @@ static std::map<Leg, std::string> __leg_str = {IncGroup(), IncGroup(1), IncGroup
 // ostream重载，使用一个static map来完成
 inline std::ostream& operator<<(std::ostream& out, const Leg& value)
 {
-  return out << __leg_str[value];
+  try
+  {
+    return out << __leg_str.at(value);
+  }
+  catch(const std::out_of_range& e)
+  {
+    return out;
+  }
 }
 
 /* 设置默认Leg */
@@ -52,16 +59,15 @@ OOO
 // 可能需要mkl blas那些东西
 // #define EIGEN_USE_MKL_ALL
 // #define EIGEN_USE_MKL_VML
-#define EIGEN_USE_LAPACKE
-#define EIGEN_USE_BLAS
+// #define EIGEN_USE_LAPACKE
+// #define EIGEN_USE_BLAS
 #include <Eigen/Dense>
 #include <Eigen/CXX11/Tensor>
 
 namespace Node
 {
 // check Tensor的一个macro
-template<typename TensorType>
-void __debug_tensor(const TensorType& x, const char* name, std::ostream& os)
+void __debug_tensor(const auto& x, const char* name, std::ostream& os)
 {
   os << " " << name << "= { rank=" << x.NumDimensions << " dims=[";
   for (auto i = 0; i < x.NumDimensions; i++)
@@ -87,23 +93,20 @@ void __debug_tensor(const TensorType& x, const char* name, std::ostream& os)
 
 /* contraction */
 // 定义三个index用的macro，这样方便，写函数的话vector和map的格式都不一样，这里类型检查看起来也没比宏强多少
-template<typename ContainerType, typename T>
 EIGEN_DEVICE_FUNC inline auto
-__find_in(const T& it, const ContainerType& pool)
+__find_in(const auto& it, const auto& pool)
 {
   return std::find(pool.begin(), pool.end(), it);
 }
 
-template<typename ContainerType, typename T>
 EIGEN_DEVICE_FUNC inline bool
-__not_found(const T& it, const ContainerType& pool)
+__not_found(const auto& it, const auto& pool)
 {
   return __find_in(it, pool) == pool.end();
 }
 
-template<typename ContainerType, typename T>
 EIGEN_DEVICE_FUNC inline int
-__get_index(const T& it, const ContainerType& pool)
+__get_index(const auto& it, const auto& pool)
 {
   return std::distance(pool.begin(), __find_in(it, pool));
 }
@@ -115,10 +118,7 @@ __to_tensor(TensorType& tensor)
   return Eigen::Tensor<typename TensorType::Scalar, TensorType::NumDimensions> {tensor};
 }
 
-template<typename A, typename B, typename C, typename D, typename E>
-EIGEN_DEVICE_FUNC inline void __check_in_and_map(const A& it, const B& leg, const C& map, D& res, E& i)
-// EIGEN_DEVICE_FUNC inline void __check_in_and_map(const auto& it, const auto& leg, const auto& map, auto& res, auto& i)
-// c++20 concept
+EIGEN_DEVICE_FUNC inline void __check_in_and_map(const auto& it, const auto& leg, const auto& map, auto& res, auto& i)
 {
   if (__not_found(it, leg))
   {
@@ -192,8 +192,7 @@ class __svd_res : public std::tuple<T1, T2, T3>
   }
 };
 
-template<typename SrcType, typename DstType>
-EIGEN_DEVICE_FUNC inline void __copy_data(const SrcType& src, DstType& dst)
+EIGEN_DEVICE_FUNC inline void __copy_data(const auto& src, auto& dst)
 {
   std::copy(src.data(), src.data()+dst.size(), dst.data());
 }
@@ -212,10 +211,10 @@ svd(const TensorType& tensor,
   // typedef Eigen::internal::traits<TensorType> Traits;
   using Index = typename TensorType::Index;
   using Scalar = typename TensorType::Scalar;
+  using MatrixS = Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>;
   static const std::size_t Rank = TensorType::NumDimensions;
   static const std::size_t LeftRank = SplitNum;
   static const std::size_t RightRank = Rank - SplitNum;
-  using MatrixS = Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>;
   // 首先按照leg，分别把整个tensor的legs分左右两边
   Index left_size = 1, right_size = 1;
   Index left_index = 0, right_index = 0;
@@ -280,9 +279,7 @@ svd(const TensorType& tensor,
     S.leg_info = Eigen::array<Leg, 1>{new_leg1};
   }
   V.leg_info = right_new_leg;
-  return __svd_res<Eigen::Tensor<Scalar, LeftRank+1>,
-                   Eigen::Tensor<Scalar, 1>,
-                   Eigen::Tensor<Scalar, RightRank+1>> {U, S, V};
+  return __svd_res {U, S, V};
 }
 
 template<typename T1, typename T2>
@@ -315,10 +312,10 @@ qr(const TensorType& tensor,
   // typedef Eigen::internal::traits<TensorType> Traits;
   using Index = typename TensorType::Index;
   using Scalar = typename TensorType::Scalar;
+  using MatrixS = Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>;
   static const std::size_t Rank = TensorType::NumDimensions;
   static const std::size_t LeftRank = SplitNum;
   static const std::size_t RightRank = Rank - SplitNum;
-  using MatrixS = Eigen::Matrix<Scalar, Eigen::Dynamic, Eigen::Dynamic>;
   // 首先按照leg，分别把整个tensor的legs分左右两边
   Index left_size = 1, right_size = 1;
   Index left_index = 0, right_index = 0;
@@ -385,8 +382,7 @@ qr(const TensorType& tensor,
   // leg处理一下
   Q.leg_info = left_new_leg;
   R.leg_info = right_new_leg;
-  return __qr_res<Eigen::Tensor<Scalar, LeftRank+1>,
-                  Eigen::Tensor<Scalar, RightRank+1>> {Q, R};
+  return __qr_res {Q, R};
 }
 
 /* transpose */
@@ -415,6 +411,7 @@ transpose(const TensorType& tensor,
 
 /* multiple */
 // https://stackoverflow.com/questions/47040173/how-to-multiple-two-eigen-tensors-along-batch-dimension
+
 template <typename TensorType>
 EIGEN_DEVICE_FUNC auto
 multiple(const TensorType& tensor,
@@ -436,6 +433,7 @@ multiple(const TensorType& tensor,
   {
     to_bcast[i] = tensor.dimension(i);
   }
+  // 这里这么做是因为fixed size的dimensions()并不能转换为array
   to_bcast[index] = 1;
   // 注意cwise乘积顺序, leg是根据左边那个来的
   return __to_tensor(tensor * vector.reshape(to_reshape).broadcast(to_bcast));
