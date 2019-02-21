@@ -2,7 +2,6 @@
 - at the end of `class TensorBase` public domain, 加入了leg_info的成员, 以及leg_rename函数
 - `Tensor.h` 中的constructor和operator=需要各种复制`leg_info`, 两个来源，一个运算，一个复制(只有在需要resize的时候需要)
 - 在cwise那些东西里加了leg info，从而实现scalar功能
-- fixed LhsXprType + RhsXprType的typo
 
 ## Eigen_Node接口
 - leg的维护需要手动对各种op做wrap，所以除非在外面设定`leg_info`，只能使用plugin中的几个函数
